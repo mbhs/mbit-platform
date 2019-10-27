@@ -104,7 +104,7 @@
 					<div class="field"><textarea class="textarea" placeholder="Content" v-model="announcement.content"></textarea></div>
 					<div class="field"><button class="button is-primary" @click="announce()">Announce</button></div>
 				</div>
-				<div v-show="state.active === 'teams'" v-if="teams.length">
+				<div v-show="state.active === 'teams'">
 					<div class="tabs">
 						<ul>
 							<li :class="{ 'is-active': tab === 'team-info' }" @click="tab = 'team-info'"><a>Teams</a></li>
@@ -183,7 +183,7 @@
 						</div>
 					</div>
 				</div>
-				<div v-show="state.active === 'problems'" v-if="problems.length">
+				<div v-show="state.active === 'problems'">
 					<label class="label">New Problem</label>
 					<div class="field">
 						<div class="select"><select v-model="newProblem.round">
