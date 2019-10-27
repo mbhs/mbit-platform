@@ -208,7 +208,7 @@
 							<li :class="{ 'is-active': tab === 'test-cases' }" @click="tab = 'test-cases'"><a>Test Cases</a></li>
 						</ul>
 					</div>
-					<div class="problem-submissions" v-show="tab === 'problem-submissions'">
+					<div class="problem-submissions" v-show="tab === 'problem-submissions'" v-if="problems.length">
 						<div class="box">
 							<table class="table is-fullwidth">
 								<thead>
