@@ -35,7 +35,7 @@
 					<li><a @click="navigate('admin', 'announcements')" :class="{ 'is-active': panel === 'admin' &amp;&amp; active === 'announcements' }">Announcements</a></li>
 				</ul>
 			</aside>
-			<div class="column" id="announcements-panel" v-show="state.panel === 'announcements'" v-cloak>
+			<div class="column panel" id="announcements-panel" v-show="state.panel === 'announcements'" v-cloak>
 				<div class="card" style="margin-bottom: 1rem;" v-for="announcement in announcements">
 					<header class="card-header">
 						<p class="card-header-title">
@@ -45,7 +45,7 @@
 					<div class="card-content">[[ announcement.content ]]</div>
 				</div>
 			</div>
-			<div class="column" id="problem-panel" v-show="state.panel === 'problem'" v-cloak>
+			<div class="column panel" id="problem-panel" v-show="state.panel === 'problem'" v-cloak>
 				<h3 class="is-4 subtitle submission">Submission</h3>
 				<div class="file has-name is-boxed program-upload">
 					<label class="file-label">
@@ -81,24 +81,121 @@
 						</select>
 					</div>
 					<div class="columns test-cases" v-if="result !== null &amp;&amp; results.length > result">
-						<div @click="codeDescription = test.result" v-for="test in (result === null ? [] : results[result].tests)" class="button column has-text-centered has-text-weight-bold" :class="{'is-correct': test.result === 'correct', 'is-wrong': test.result &amp;&amp; test.result !== 'correct', 'is-loading': !test.result}">
+						<div @click="testInfo = tindex" v-for="(test, tindex) in (result === null ? [] : results[result].tests)" class="button column has-text-centered has-text-weight-bold" :class="{'is-correct': test.result === 'correct', 'is-wrong': test.result &amp;&amp; test.result !== 'correct', 'is-loading': !test.result}">
 							<i v-if="test.result === 'correct'" class="fas fa-check"></i>
 							<span v-if="test.result !== 'correct'">[[ codes[test.result] ]]</span>
 						</div>
 					</div>
-					<div class="code-description notification" v-if="codeDescription !== null">
-						<button class="delete" @click="codeDescription = null"></button>
-						<strong>[[ descriptions[codeDescription].name ]].</strong> [[ descriptions[codeDescription].body ]]
+					<div class="code-description notification" v-if="testInfo !== null &amp;&amp; results[result].tests[testInfo].result in descriptions">
+						<button class="delete" @click="testInfo = null"></button>
+						<strong>[[ descriptions[results[result].tests[testInfo].result].name ]].</strong> [[ descriptions[results[result].tests[testInfo].result].body ]]
+						<p v-show="results[result].tests[testInfo].stdin">Input</p>
+						<pre v-show="results[result].tests[testInfo].stdin">[[ results[result].tests[testInfo].stdin ]]</pre>
+						<p v-show="results[result].tests[testInfo].stdout">Output</p>
+						<pre v-show="results[result].tests[testInfo].stdout">[[ results[result].tests[testInfo].stdout ]]</pre>
+						<p v-show="results[result].tests[testInfo].stderr">Error</p>
+						<pre v-show="results[result].tests[testInfo].stderr">[[ results[result].tests[testInfo].stderr ]]</pre>
 					</div>
 				</div>
 			</div>
-			<div class="column" id="admin-panel" v-show="state.panel === 'admin'" v-cloak>
+			<div class="column panel" id="admin-panel" v-show="state.panel === 'admin'" v-cloak>
 				<div v-show="state.active === 'announcements'">
 					<div class="field"><input class="input" type="text" placeholder="Title" v-model="announcement.title"></div>
 					<div class="field"><textarea class="textarea" placeholder="Content" v-model="announcement.content"></textarea></div>
 					<div class="field"><button class="button is-primary" @click="announce()">Announce</button></div>
 				</div>
+				<div v-show="state.active === 'teams'" v-if="teams.length">
+					<div class="tabs">
+						<ul>
+							<li :class="{ 'is-active': tab === 'team-info' }" @click="tab = 'team-info'"><a>Teams</a></li>
+							<li :class="{ 'is-active': tab === 'team-results' }" @click="tab = 'team-results'"><a>Results</a></li>
+						</ul>
+					</div>
+					<div v-show="tab === 'team-results'">
+						<div class="field">
+							<label class="label">Team</label>
+							<div class="select"><select v-model="team">
+								<option v-for="(team, index) in teams" :value="index">[[ team.name ]]</option>
+							</select></div>
+						</div>
+						<div class="field">
+							<label class="label">Problem</label>
+							<div class="select"><select v-model="problem">
+								<option v-for="(problem, index) in problems" :value="index">[[ problem.name ]]</option>
+							</select></div>
+						</div>
+						<div v-if="results.length" style="margin-bottom: 2rem;">
+							<p class="label">Preliminary Tests</p>
+							<div class="columns test-cases" v-if="preliminary.length">
+								<div @click="testInfo = test.result" v-for="test in preliminary" class="button column has-text-centered has-text-weight-bold" :class="{'is-correct': test.result === 'correct', 'is-wrong': test.result &amp;&amp; test.result !== 'correct', 'is-loading': !test.result}">
+									<i v-if="test.result === 'correct'" class="fas fa-check"></i>
+									<span v-if="test.result !== 'correct'">[[ codes[test.result] ]]</span>
+								</div>
+							</div>
+							<p class="label">Full Tests</p>
+							<div class="columns test-cases" v-if="notPreliminary.length">
+								<div @click="testInfo = test.result" v-for="test in notPreliminary" class="button column has-text-centered has-text-weight-bold" :class="{'is-correct': test.result === 'correct', 'is-wrong': test.result &amp;&amp; test.result !== 'correct', 'is-loading': !test.result}">
+									<i v-if="test.result === 'correct'" class="fas fa-check"></i>
+									<span v-if="test.result !== 'correct'">[[ codes[test.result] ]]</span>
+								</div>
+							</div>
+							<button @click="grade(team, problem)" class="button is-primary" v-if="preliminary.length &amp;&amp; !notPreliminary.length">Grade</button>
+						</div>
+						<p v-if="!results.length" style="margin-top: 1rem;"><em>No submissions yet.</em></p>
+						<div class="code-description notification" v-if="testInfo !== null">
+							<button class="delete" @click="testInfo = null"></button>
+							<strong>[[ descriptions[testInfo].name ]].</strong> [[ descriptions[testInfo].body ]]
+						</div>
+					</div>
+					<div v-show="tab === 'team-info'">
+						<div class="field">
+							<label class="label">Team Name</label>
+							<input class="input" type="text" placeholder="Name" v-model="newTeam.name">
+						</div>
+						<div class="field">
+							<label class="label">Password</label>
+							<input class="input" type="text" placeholder="Password" v-model="newTeam.password">
+						</div>
+						<div class="field">
+							<label class="label">Division</label>
+							<div class="select"><select v-model="newTeam.division">
+								<option v-for="division in divisions" :value="division.id">[[ division.name ]]</option>
+							</select></div>
+						</div>
+						<button class="button is-primary" @click="createTeam()">Create Team</button>
+						<div class="box" style="margin-top: 1rem;">
+							<table class="table is-fullwidth">
+								<thead>
+									<tr>
+										<th>Name</th>
+										<th>Division</th>
+										<th>Submissions</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr v-for="team in teams">
+										<td>[[ team.name ]]</td>
+										<td>[[ team.division ]]</td>
+										<td>[[ team.submissions ]]</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
 				<div v-show="state.active === 'problems'" v-if="problems.length">
+					<label class="label">New Problem</label>
+					<div class="field">
+						<div class="select"><select v-model="newProblem.round">
+							<option v-for="round in rounds" :value="round.id">[[ round.name ]]</option>
+						</select></div>
+					</div>
+					<div class="field has-addons">
+						<div class="control"><input class="input" type="text" placeholder="Name" v-model="newProblem.name"></div>
+						<div class="control"><input class="input" type="text" placeholder="Slug" v-model="newProblem.slug"></div>
+						<div class="control"><button class="button is-primary" @click="createProblem()">Create Problem</button></div>
+					</div>
+					<hr>
 					<div class="field">
 						<label class="label">Problem</label>
 						<div class="select"><select v-model="problem">

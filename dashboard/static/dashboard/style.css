@@ -6812,5 +6812,14 @@ a.is-active > .badge {
 
 .code-description {
   margin-bottom: 0 !important; }
+  .code-description p {
+    margin-bottom: 0.3rem;
+    padding-top: 1rem;
+    font-weight: bold;
+    border-bottom: 1px solid; }
 
-/*# sourceMappingURL=style.css.map */
+pre {
+  color: #ba392a; }
+
+.panel {
+  width: 80%; }
