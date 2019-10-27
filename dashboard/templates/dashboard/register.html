@@ -1,0 +1,38 @@
+{% extends 'dashboard/base.html' %}
+{% load modify_field %}
+
+{% block content %}
+<section class="hero has-background-primary">
+	<div class="hero-body">
+		<div class="container">
+			<h1 class="title is-1"><span class="has-text-white">Register</span></h1>
+		</div>
+	</div>
+</section>
+<section class="section">
+	<div class="container">
+		{% if form.non_field_errors %}
+			<div class="notification is-danger">
+				{{ form.non_field_errors }}
+			</div>
+		{% endif %}
+		<div class="box">
+			<form method="post">
+				{% csrf_token %}
+				{% for field in form %}
+					<div class="field">
+						<label class="label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+						<div class="control">
+							{{ field|add_class:"input"  }}
+						</div>
+						{% if field.errors %}
+							<div class="help is-danger">{{ field.errors }}</div>
+						{% endif %}
+					</div>
+				{% endfor %}
+				<button type="submit" class="button is-primary">Register</button>
+			</form>
+		</div>
+	</div>
+</section>
+{% endblock %}
