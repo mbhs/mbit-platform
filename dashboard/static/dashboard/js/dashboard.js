@@ -269,10 +269,8 @@ function connect () {
 	ws.addEventListener('open', function (event) {
 		closeModals()
 		ws.send(JSON.stringify({'type': 'get_problems'}))
-		if (navigation.admin) {
-			ws.send(JSON.stringify({'type': 'admin_problems'}))
-			ws.send(JSON.stringify({'type': 'admin_teams'}))
-		}
+		ws.send(JSON.stringify({'type': 'admin_problems'}))
+		ws.send(JSON.stringify({'type': 'admin_teams'}))
 		ws.send(JSON.stringify({'type': 'get_announcements'}))
 	})
 
