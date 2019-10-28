@@ -246,7 +246,7 @@
 									</tr>
 								</thead>
 								<tbody>
-									<tr v-if="problems.length" v-for="test in problems[problem].test_cases">
+									<tr v-for="test in (problems.length ? problems[problem].test_cases : [])">
 										<td>[[ test.num ]]</td>
 										<td>[[ test.group ]]</td>
 										<td>[[ test.preliminary ? 'Yes' : 'No' ]]
