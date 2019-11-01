@@ -33,7 +33,7 @@ def grade(event):
 		urlh = hashlib.sha256(bytes(url, encoding="ascii")).hexdigest()
 		if not cache.get(urlh):
 			cache.set(urlh, 'using')
-			try: r = requests.post(f'{url}/run', json={"lang": submission.language, "source": submission.code, "tests": test_cases, "execute": {"time": getattr(submission.problem, submission.language.replace("+", "p")+"_time"), "mem": 262144}}, timeout=None, auth=AUTH)
+			try: r = requests.post(f'{url}/run', json={"lang": submission.language, "source": submission.code, "tests": test_cases, "execute": {"time": getattr(submission.problem, submission.language.replace("+", "p")+"_time"), "mem": 262144}}, timeout=1800, auth=AUTH)
 			except Exception as e:
 				print(e)
 				cache.delete(urlh)
@@ -42,7 +42,8 @@ def grade(event):
 			results = sorted(r.json()['tests'], key=lambda x:int(x['name'])) if 'tests' in r.json() else []
 			break
 		time.sleep(0.2)
-	if not results and r.json()['compile']['meta']['status'] != 'OK': results = [r.json()['compile']]*len(test_cases)
+	if not results and 'compile' in r.json() and r.json()['compile']['meta']['status'] != 'OK': results = [r.json()['compile']]*len(test_cases)
+	else: print(r.json())
 	checkdir = '/tmp/'+secrets.token_hex(16)
 	os.mkdir(checkdir)
 	checkers = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'checkers')
