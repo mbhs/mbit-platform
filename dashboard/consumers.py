@@ -71,7 +71,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 		self.send_json({
 			'type': 'admin_problems',
 			'problems': problem_list,
-			'test_case_groups': list(map(lambda g: g.name, TestCaseGroup.objects.all()))
+			'test_case_groups': list(map(lambda g: g['name'], TestCaseGroup.objects.all().values('name')))
 		})
 
 	def receive_json(self, content):
