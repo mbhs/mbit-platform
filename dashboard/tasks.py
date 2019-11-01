@@ -78,7 +78,7 @@ def grade(event):
 			'type': 'graded',
 			'problem': event['problem']
 		})
-	else:
+	else if event['channel']:
 		async_to_sync(channel_layer.send)(event['channel'], {
 			'type': 'fully_graded',
 			'problem': event['problem'],

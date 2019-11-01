@@ -128,6 +128,12 @@ class DashboardConsumer(JsonWebsocketConsumer):
 				'user_group': self.user_group,
 				'preliminary': True
 			})
+			grade.delay({
+				'type': 'grade',
+				'problem': content['problem'],
+				'submission': submission.id,
+				'preliminary': False
+			})
 		elif content['type'] == 'get_announcements':
 			self.send_announcements()
 		elif self.scope['user'].is_staff:
