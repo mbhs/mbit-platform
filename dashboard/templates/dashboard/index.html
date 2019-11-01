@@ -139,7 +139,7 @@
 									<span v-if="test.result !== 'correct'">[[ codes[test.result] ]]</span>
 								</div>
 							</div>
-							<button @click="grade(team, problem)" class="button is-primary" v-if="preliminary.length &amp;&amp; !notPreliminary.length">Grade</button>
+							<!--<button @click="grade(team, problem)" class="button is-primary" v-if="preliminary.length &amp;&amp; !notPreliminary.length">Grade</button>-->
 						</div>
 						<p v-if="!results.length" style="margin-top: 1rem;"><em>No submissions yet.</em></p>
 						<div class="code-description notification" v-if="testInfo !== null">
