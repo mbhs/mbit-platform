@@ -65,8 +65,8 @@ class DashboardConsumer(JsonWebsocketConsumer):
 		problem_list = []
 		for problem in problems:
 			temp = model_to_dict(problem, fields=('name', 'slug'))
-			temp['submissions'] = list(map(lambda s: {'team': s.user.username, 'filename': s.filename, 'time': int(s.timestamp.timestamp()*1000)}, problem.submission_set.all()))
-			temp['test_cases'] = list(map(lambda t: {'num': t.num, 'group': t.group.name, 'preliminary': t.preliminary}, problem.testcase_set.all()))
+			temp['submissions'] = list(map(lambda s: {'team': s['user__username'], 'filename': s['filename'], 'time': int(s['timestamp'].timestamp()*1000)}, problem.submission_set.all().values('timestamp', 'filename', 'user__username')))
+			temp['test_cases'] = list(map(lambda t: {'preliminary': t['preliminary'], 'num': t['num'], 'group': t['group__name']}, problem.testcase_set.all().values('preliminary', 'num', 'group__name')))
 			problem_list.append(temp)
 		self.send_json({
 			'type': 'admin_problems',
