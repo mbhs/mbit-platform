@@ -1,8 +1,7 @@
 from channels.auth import AuthMiddlewareStack
 from channels.security.websocket import AllowedHostsOriginValidator
-from channels.routing import ProtocolTypeRouter, URLRouter, ChannelNameRouter
+from channels.routing import ProtocolTypeRouter, URLRouter
 import dashboard.routing
-import dashboard.consumers
 
 application = ProtocolTypeRouter({
 	'websocket': AllowedHostsOriginValidator(
@@ -11,8 +10,5 @@ application = ProtocolTypeRouter({
 				dashboard.routing.websocket_urlpatterns
 			)
 		)
-	),
-	'channel': ChannelNameRouter({
-		'grading': dashboard.consumers.GradingWorker
-	})
+	)
 })

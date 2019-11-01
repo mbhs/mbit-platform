@@ -11,6 +11,7 @@ channels = "*"
 gunicorn = "*"
 requests = "*"
 channels-redis = "*"
+celery = {extras = ["redis"],version = "*"}
 
 [requires]
 python_version = "3.7"

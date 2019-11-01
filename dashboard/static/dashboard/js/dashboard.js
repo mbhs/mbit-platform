@@ -7,9 +7,13 @@ var descriptions = {
 		name: 'Time Limit Exceeded',
 		body: 'Your program ran out of time. Try optimizing your program; you may need to reconsider your approach.'
 	},
+	'memoryout': {
+		name: 'Out Of Memory',
+		body: 'Your program exhausted the available memory (256 MB).'
+	},
 	'error': {
 		name: 'Error',
-		body: 'You may have a compile-time error, a run-time error, or your program may have exhausted the available memory (256MB). Ask an organizer for more detailed information on the nature of the error.'
+		body: 'You may have a compile-time error or a run-time error. See below for more details.'
 	},
 	'correct': {
 		name: 'Correct',
@@ -20,7 +24,8 @@ var descriptions = {
 var codes = {
 	timeout: 'TLE',
 	incorrect: 'WA',
-	error: 'ERR'
+	error: 'ERR',
+	memoryout: 'OOM'
 }
 
 var state = {
@@ -118,6 +123,12 @@ var problemPanel = new Vue({
 			this.$refs.fileInput.value = null
 			this.submission.filename = ''
 			this.submission.content = ''
+		},
+		setTestCase (tindex) {
+			ws.send(JSON.stringify({'type': 'get_test_case', 'case': this.results[this.result].tests[tindex].id}))
+			setTimeout(function () {
+				this.testInfo = tindex
+			}.bind(this), 10)
 		}
 	}
 })
@@ -149,6 +160,9 @@ var adminPanel = new Vue({
 			name: '',
 			slug: '',
 			round: null,
+			cpp_time: 1,
+			java_time: 1,
+			python_time: 1
 		},
 		announcement: {
 			title: '',
@@ -194,9 +208,13 @@ var adminPanel = new Vue({
 			this.newTeam.password = ''
 		},
 		createProblem () {
-			if (this.newProblem.name && this.newProblem.slug) {
+			if (this.newProblem.name) {
+				this.newProblem.slug = slugify(this.newProblem.name)
 				ws.send(JSON.stringify({type: 'create_problem', problem: this.newProblem}))
 				this.newProblem.name = ''
+				this.newProblem.cpp_time = 1
+				this.newProblem.java_time = 1
+				this.newProblem.python_time = 1
 				this.newProblem.slug = ''
 			}
 		}
@@ -236,6 +254,15 @@ function connect () {
 			problemPanel.results.unshift(result)
 			problemPanel.result = 0
 			problemPanel.testInfo = null
+		}
+		else if (data.type === 'case_result') {
+			if (problemPanel.results.length > problemPanel.result) {
+				for (var tindex = 0; tindex < problemPanel.results[problemPanel.result].tests.length; tindex++) {
+					if (problemPanel.results[problemPanel.result].tests[tindex].id === data.case.id) {
+						Vue.set(problemPanel.results[problemPanel.result].tests, tindex, data.case)
+					}
+				}
+			}
 		}
 		else if (data.type === 'admin_problems') {
 			adminPanel.problems = data.problems
@@ -283,3 +310,15 @@ function connect () {
 }
 
 connect()
+
+function slugify (str) {
+    str = str.replace(/^\s+|\s+$/g, '')
+    str = str.toLowerCase()
+    var from = "ÁÄÂÀÃÅČÇĆĎÉĚËÈÊẼĔȆÍÌÎÏŇÑÓÖÒÔÕØŘŔŠŤÚŮÜÙÛÝŸŽáäâàãåčçćďéěëèêẽĕȇíìîïňñóöòôõøðřŕšťúůüùûýÿžþÞĐđßÆa"
+    var to = "AAAAAACCCDEEEEEEEEIIIINNOOOOOORRSTUUUUUYYZaaaaaacccdeeeeeeeeiiiinnooooooorrstuuuuuyyzbBDdBAa"
+    for (var i = 0, l = from.length; i < l; i++) {
+        str = str.replace(new RegExp(from.charAt(i), 'g'), to.charAt(i))
+    }
+    str = str.replace(/[^a-z0-9 _]/g, '').replace(/\s+/g, '_').replace(/_+/g, '_');
+    return str
+}

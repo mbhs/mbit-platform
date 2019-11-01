@@ -7,6 +7,7 @@ from channels.auth import get_user
 from .models import Problem, Submission, TestCaseGroup, TestCaseResult, Announcement, Division, Profile, Round
 from django.db.models import Count, F
 from django.contrib.auth import get_user_model
+from .tasks import grade
 
 from datetime import datetime
 import requests
@@ -14,52 +15,6 @@ import secrets
 import os
 import shutil
 import subprocess
-
-class GradingWorker(SyncConsumer):
-	def grade(self, event):
-		problem_obj = Problem.objects.get(slug=event['problem'])
-		submission = Submission.objects.get(id=event['submission'])
-		test_cases = list(map(lambda t: {'name': str(t.num), 'stdin': t.stdin}, problem_obj.testcase_set.filter(preliminary=event['preliminary'])))
-		r = requests.post('http://192.168.7.74:42920/run', json={"lang": submission.language, "source": submission.code, "tests": test_cases, "execute": {"time": 2 if submission.language == "cpp" else 4, "mem": 262144}})
-		results = sorted(r.json()['tests'], key=lambda x:int(x['name'])) if 'tests' in r.json() else []
-		if not results and r.json()['compile']['meta']['status'] != 'OK': results = [r.json()['compile']]*len(test_cases)
-		checkdir = '/tmp/'+secrets.token_hex(16)
-		os.mkdir(checkdir)
-		checkers = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'checkers')
-		print(results)
-		for test_case, result in zip(problem_obj.testcase_set.filter(preliminary=event['preliminary']).order_by('num'), results):
-			testresult = TestCaseResult(submission=submission, test_case=test_case)
-			if result['meta']['status'] == 'OK':
-				inp = open(os.path.join(checkdir, 'inp'), 'w')
-				inp.write(test_case.stdin)
-				inp.close()
-				out = open(os.path.join(checkdir, 'out'), 'w')
-				out.write(result['stdout'])
-				out.close()
-				ans = open(os.path.join(checkdir, 'ans'), 'w')
-				ans.write(test_case.stdout)
-				ans.close()
-				r = subprocess.run([os.path.join(checkers, test_case.checker), os.path.join(checkdir, 'inp'), os.path.join(checkdir, 'out'), os.path.join(checkdir, 'ans')], capture_output=True)
-				testresult.result = "correct" if r.returncode == 0 else "incorrect"
-			elif result['meta']['status'] == 'TIMED_OUT':
-				testresult.result = 'timeout'
-			else:
-				testresult.result = 'error'
-			if result.get('stderr'): testresult.stderr = result['stderr']
-			if result.get('stdout'): testresult.stdout = result['stdout']
-			testresult.save()
-		shutil.rmtree(checkdir)
-		if event['preliminary']:
-			async_to_sync(self.channel_layer.group_send)(event['user_group'], {
-				'type': 'graded',
-				'problem': event['problem']
-			})
-		else:
-			async_to_sync(self.channel_layer.send)(event['channel'], {
-				'type': 'fully_graded',
-				'problem': event['problem'],
-				'team': submission.user.username
-			})
 
 class DashboardConsumer(JsonWebsocketConsumer):
 	def connect(self):
@@ -138,11 +93,18 @@ class DashboardConsumer(JsonWebsocketConsumer):
 				result = {'id': resultobj.id, 'filename': resultobj.filename, 'tests': testcasecount, 'time': int(resultobj.timestamp.timestamp()*1000), 'url': '/submission/'+str(resultobj.id)+'/'+resultobj.filename}
 				caseresults = resultobj.testcaseresult_set.filter(test_case__preliminary=True).order_by('test_case__num')
 				if len(caseresults):
-					result['tests'] = list(caseresults.values('result', 'stdout', 'stderr', num=F('test_case__num'), stdin=F('test_case__stdin')))
+					result['tests'] = list(caseresults.values('id', 'result', num=F('test_case__num')))
 				problem['results'].append(result)
 			self.send_json({
 				'type': 'problem',
 				'problem': problem
+			})
+		elif content['type'] == 'get_test_case' and 'case' in content:
+			result_obj = TestCaseResult.objects.filter(id=content['case'])
+			if len(result_obj) == 0: return
+			self.send_json({
+				'type': 'case_result',
+				'case': list(result_obj.values('result', 'id', 'stdout', 'stderr', num=F('test_case__num'), stdin=F('test_case__stdin')))[0]
 			})
 		elif content['type'] == 'submit' and 'problem' in content and 'submission' in content and content['submission'].get('filename') and content['submission'].get('language') in ('python', 'java', 'c++') and content['submission'].get('content'):
 			try: problem_obj = self.problems.get(slug=content['problem'])
@@ -159,7 +121,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 					'time': int(submission.timestamp.timestamp()*1000)
 				}
 			})
-			async_to_sync(self.channel_layer.send)('grading', {
+			grade.delay({
 				'type': 'grade',
 				'problem': content['problem'],
 				'submission': submission.id,
@@ -173,7 +135,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 				self.send_admin_problems()
 			elif content['type'] == 'create_problem':
 				try:
-					newProblem = Problem(name=content['problem']['name'], slug=content['problem']['slug'], round=Round.objects.get(id=content['problem']['round']))
+					newProblem = Problem(name=content['problem']['name'], slug=content['problem']['slug'], python_time=int(content['problem']['python_time']), java_time=int(content['problem']['java_time']), cpp_time=int(content['problem']['cpp_time']), round=Round.objects.get(id=content['problem']['round']))
 					newProblem.save()
 					self.send_admin_problems()
 				except Exception as e: print(e)
@@ -210,7 +172,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 				team = get_user_model().objects.get(username=content['team'])
 				problem = Problem.objects.get(slug=content['problem'])
 				submission = team.submission_set.filter(problem=problem).order_by('-timestamp').first()
-				async_to_sync(self.channel_layer.send)('grading', {
+				grade.delay({
 					'type': 'grade',
 					'problem': content['problem'],
 					'submission': submission.id,

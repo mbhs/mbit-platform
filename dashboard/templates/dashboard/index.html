@@ -81,7 +81,7 @@
 						</select>
 					</div>
 					<div class="columns test-cases" v-if="result !== null &amp;&amp; results.length > result">
-						<div @click="testInfo = tindex" v-for="(test, tindex) in (result === null ? [] : results[result].tests)" class="button column has-text-centered has-text-weight-bold" :class="{'is-correct': test.result === 'correct', 'is-wrong': test.result &amp;&amp; test.result !== 'correct', 'is-loading': !test.result}">
+						<div @click="setTestCase(tindex)" v-for="(test, tindex) in (result === null ? [] : results[result].tests)" class="button column has-text-centered has-text-weight-bold" :class="{'is-correct': test.result === 'correct', 'is-wrong': test.result &amp;&amp; test.result !== 'correct', 'is-loading': !test.result}">
 							<i v-if="test.result === 'correct'" class="fas fa-check"></i>
 							<span v-if="test.result !== 'correct'">[[ codes[test.result] ]]</span>
 						</div>
@@ -190,9 +190,14 @@
 							<option v-for="round in rounds" :value="round.id">[[ round.name ]]</option>
 						</select></div>
 					</div>
+					<label class="label">Time Limits (C++, Java, Python)</label>
+					<div class="field has-addons">
+						<div class="control"><input class="input" type="number" placeholder="C++" v-model="newProblem.cpp_time"></div>
+						<div class="control"><input class="input" type="number" placeholder="Java" v-model="newProblem.java_time"></div>
+						<div class="control"><input class="input" type="number" placeholder="Python" v-model="newProblem.python_time"></div>
+					</div>
 					<div class="field has-addons">
 						<div class="control"><input class="input" type="text" placeholder="Name" v-model="newProblem.name"></div>
-						<div class="control"><input class="input" type="text" placeholder="Slug" v-model="newProblem.slug"></div>
 						<div class="control"><button class="button is-primary" @click="createProblem()">Create Problem</button></div>
 					</div>
 					<hr>
