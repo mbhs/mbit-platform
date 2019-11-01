@@ -141,7 +141,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 				self.send_admin_problems()
 			elif content['type'] == 'create_problem':
 				try:
-					newProblem = Problem(name=content['problem']['name'], slug=content['problem']['slug'], python_time=int(content['problem']['python_time']), java_time=int(content['problem']['java_time']), cpp_time=int(content['problem']['cpp_time']), round=Round.objects.get(id=content['problem']['round']))
+					newProblem = Problem(name=content['problem']['name'], slug=content['problem']['slug'], python_time=float(content['problem']['python_time']), java_time=float(content['problem']['java_time']), cpp_time=float(content['problem']['cpp_time']), round=Round.objects.get(id=content['problem']['round']))
 					newProblem.save()
 					self.send_admin_problems()
 				except Exception as e: print(e)
