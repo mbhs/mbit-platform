@@ -33,7 +33,7 @@ def grade(event):
 		urlh = hashlib.sha256(bytes(url, encoding="ascii")).hexdigest()
 		if not cache.get(urlh):
 			cache.set(urlh, 'using')
-			try: r = requests.post(f'http://{url}/run', json={"lang": submission.language, "source": submission.code, "tests": test_cases, "execute": {"time": getattr(submission.problem, submission.language+"_time"), "mem": 262144}}, timeout=None, auth=AUTH)
+			try: r = requests.post(f'http://{url}/run', json={"lang": submission.language, "source": submission.code, "tests": test_cases, "execute": {"time": getattr(submission.problem, submission.language.replace("+", "p")+"_time"), "mem": 262144}}, timeout=None, auth=AUTH)
 			except Exception as e:
 				print(e)
 				cache.delete(urlh)
