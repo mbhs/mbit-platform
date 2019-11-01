@@ -17,8 +17,8 @@ from mbit.celery import app
 
 from .models import Problem, Submission, TestCaseResult
 
-SERVERS_PRELIMINARY = ['localhost:42920']
-SERVERS_FULL = ['localhost:42920', '192.168.7.74:42920']
+SERVERS_PRELIMINARY = ['http://localhost:42920']
+SERVERS_FULL = ['http://localhost:42920', 'http://192.168.7.74:42920']
 AUTH = ('mbit', 'c3bb09d5f738c36972ee2bd4994f30d6')
 
 @shared_task
@@ -33,7 +33,7 @@ def grade(event):
 		urlh = hashlib.sha256(bytes(url, encoding="ascii")).hexdigest()
 		if not cache.get(urlh):
 			cache.set(urlh, 'using')
-			try: r = requests.post(f'http://{url}/run', json={"lang": submission.language, "source": submission.code, "tests": test_cases, "execute": {"time": getattr(submission.problem, submission.language.replace("+", "p")+"_time"), "mem": 262144}}, timeout=None, auth=AUTH)
+			try: r = requests.post(f'{url}/run', json={"lang": submission.language, "source": submission.code, "tests": test_cases, "execute": {"time": getattr(submission.problem, submission.language.replace("+", "p")+"_time"), "mem": 262144}}, timeout=None, auth=AUTH)
 			except Exception as e:
 				print(e)
 				cache.delete(urlh)
