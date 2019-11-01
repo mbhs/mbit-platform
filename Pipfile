@@ -12,6 +12,8 @@ gunicorn = "*"
 requests = "*"
 channels-redis = "*"
 celery = {extras = ["redis"],version = "*"}
+psycopg2 = "*"
+daphne = "*"
 
 [requires]
 python_version = "3.7"
