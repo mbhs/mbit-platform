@@ -16,14 +16,3 @@ def submission(request, id, filename):
 		return HttpResponse(submission_obj.code, content_type="text/plain")
 	else:
 		return redirect('/login')
-
-def register(request):
-	if request.method == 'POST':
-		form = UserCreationForm(data=request.POST)
-		if form.is_valid():
-			form.save()
-			messages.success(request, "Your account has been registered.")
-			return redirect('/')
-	else:
-		form = UserCreationForm()
-	return render(request, 'dashboard/register.html', {'form': form})
