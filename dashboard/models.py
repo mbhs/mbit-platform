@@ -18,9 +18,9 @@ class Problem(models.Model):
 	name = models.CharField(max_length=64)
 	slug = models.SlugField(max_length=64, unique=True)
 	round = models.ForeignKey(Round, on_delete=models.CASCADE)
-	python_time = models.IntegerField()
-	java_time = models.IntegerField()
-	cpp_time = models.IntegerField()
+	python_time = models.FloatField()
+	java_time = models.FloatField()
+	cpp_time = models.FloatField()
 
 class Announcement(models.Model):
 	title = models.CharField(max_length=64)
