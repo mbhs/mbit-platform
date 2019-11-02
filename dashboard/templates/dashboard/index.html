@@ -88,6 +88,10 @@
 							<span v-if="test.result !== 'correct'">[[ codes[test.result] ]]</span>
 						</div>
 					</div>
+					<div class="code-description notification clickformoreinfo" v-show="results.length">
+						<button class="delete" @click="removeClickForInfo()"></button>
+						Click on a test case for more information.
+					</div>
 					<div class="code-description notification" v-if="testInfo !== null &amp;&amp; results[result].tests[testInfo].result in descriptions">
 						<button class="delete" @click="testInfo = null"></button>
 						<strong>[[ descriptions[results[result].tests[testInfo].result].name ]].</strong> [[ descriptions[results[result].tests[testInfo].result].body ]]

@@ -104,6 +104,9 @@ var problemPanel = new Vue({
 		'problem.slug': function (slug) {
 			this.testInfo = null
 			ws.send(JSON.stringify({'type': 'get_problem', 'slug': slug}))
+		},
+		'testInfo': function () {
+			this.removeClickForInfo()
 		}
 	},
 	methods: {
@@ -137,6 +140,9 @@ var problemPanel = new Vue({
 		openSubmissionEditor () {
 			this.submissionEditor = true
 			this.submission.filename = ''
+		},
+		removeClickForInfo () {
+			document.getElementsByClassName('clickformoreinfo')[0].style.display = 'none'
 		}
 	}
 })
