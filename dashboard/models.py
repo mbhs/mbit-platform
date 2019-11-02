@@ -28,7 +28,7 @@ class Announcement(models.Model):
 	timestamp = models.DateTimeField(auto_now_add=True)
 
 class Submission(models.Model):
-	code = models.BinaryField()
+	code = models.TextField()
 	filename = models.TextField()
 	language = models.TextField()
 	timestamp = models.DateTimeField(auto_now_add=True)
