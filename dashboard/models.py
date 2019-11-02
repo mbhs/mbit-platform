@@ -6,6 +6,7 @@ class Division(models.Model):
 
 class Profile(models.Model):
 	user = models.OneToOneField(get_user_model(), on_delete=models.CASCADE)
+	name = models.TextField(unique=True)
 	division = models.ForeignKey(Division, on_delete=models.CASCADE)
 
 class Round(models.Model):

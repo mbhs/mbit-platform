@@ -34,7 +34,7 @@
   	        <div class="buttons">
               {% if user.is_authenticated %}
                 <a class="button is-primary" style="pointer-events: none">
-                  <strong>{{ user.username }}</strong>
+                  <strong>{{ user.profile.name }}</strong>
                 </a>
                 <a class="button is-light" href="/logout">Logout</a>
               {% else %}

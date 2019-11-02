@@ -167,6 +167,7 @@ var adminPanel = new Vue({
 		team: 0,
 		newTeam: {
 			name: '',
+			username: '',
 			password: '',
 			division: null
 		},
@@ -219,6 +220,7 @@ var adminPanel = new Vue({
 		createTeam () {
 			ws.send(JSON.stringify({type: 'create_team', team: this.newTeam}))
 			this.newTeam.name = ''
+			this.newTeam.username = ''
 			this.newTeam.password = ''
 		},
 		createProblem () {

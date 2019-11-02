@@ -50,7 +50,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 		})
 
 	def send_admin_teams(self, event=None):
-		teams = get_user_model().objects.all().values(name=F('username'), division=F('profile__division__name'), submissions=Count('submission'))
+		teams = get_user_model().objects.all().values(name=F('profile__name'), division=F('profile__division__name'), submissions=Count('submission'))
 		divisions = Division.objects.all().values('id', 'name')
 		rounds = Division.objects.all().values('id', 'name')
 		self.send_json({
@@ -155,13 +155,13 @@ class DashboardConsumer(JsonWebsocketConsumer):
 				self.send_admin_teams()
 			elif content['type'] == 'create_team':
 				try:
-					newTeam = get_user_model().objects.create_user(username=content['team']['name'], password=content['team']['password'])
-					profile = Profile(division=Division.objects.get(id=content['team']['division']), user=newTeam)
+					newTeam = get_user_model().objects.create_user(username=content['team']['username'], password=content['team']['password'])
+					profile = Profile(division=Division.objects.get(id=content['team']['division']), user=newTeam, name=content['team']['name'])
 					profile.save()
 					self.send_admin_teams()
 				except Exception as e: print(e)
 			elif content['type'] == 'admin_result' and content.get('problem') and content.get('team'):
-				team = get_user_model().objects.get(username=content['team'])
+				team = get_user_model().objects.get(profile__name=content['team'])
 				problem = Problem.objects.get(slug=content['problem'])
 				submission = team.submission_set.filter(problem=problem).order_by('-timestamp').first()
 				if submission: results = submission.testcaseresult_set.values('result', 'stdout', preliminary=F('test_case__preliminary'), num=F('test_case__num'), stdin=F('test_case__stdin'))
