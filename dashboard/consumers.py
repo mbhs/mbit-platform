@@ -79,7 +79,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 		if content['type'] == 'get_problems':
 			self.send_json({
 				'type': 'problems',
-				'problems': list(self.problems.values('name', 'slug'))
+				'problems': list(self.problems.order_by('id').values('name', 'slug'))
 			})
 		elif content['type'] == 'get_problem' and 'slug' in content:
 			try: problem_obj = self.problems.get(slug=content['slug'])
