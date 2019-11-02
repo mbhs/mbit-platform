@@ -52,7 +52,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 	def send_admin_teams(self, event=None):
 		teams = get_user_model().objects.all().values(name=F('profile__name'), division=F('profile__division__name'), submissions=Count('submission'))
 		divisions = Division.objects.all().values('id', 'name')
-		rounds = Division.objects.all().values('id', 'name')
+		rounds = Round.objects.all().values('id', 'name')
 		self.send_json({
 			'type': 'admin_teams',
 			'teams': list(teams),
