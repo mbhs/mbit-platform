@@ -9,7 +9,7 @@ from django.db.models import Count, F
 from django.contrib.auth import get_user_model
 from .tasks import grade
 
-from datetime import datetime
+from datetime import datetime, timedelta
 import requests
 import secrets
 import os
@@ -109,6 +109,9 @@ class DashboardConsumer(JsonWebsocketConsumer):
 		elif content['type'] == 'submit' and 'problem' in content and 'submission' in content and content['submission'].get('filename') and content['submission'].get('language') in ('python', 'java', 'c++') and content['submission'].get('content'):
 			if len(content['submission']['content']) >  1000000:
 				self.send_json({'type': 'error', 'message': 'Submission too large.'})
+				return
+			if len(self.scope['user'].submission_set.filter(timestamp__gte=datetime.now()-datetime.timedelta(minutes=5))) >= 20:
+				self.send_json({'type': 'error', 'message': 'Too many submissions! Try again in 5 minutes.'})
 				return
 			try: problem_obj = self.problems.get(slug=content['problem'])
 			except ObjectDoesNotExist: return

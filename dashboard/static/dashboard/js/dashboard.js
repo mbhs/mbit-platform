@@ -308,6 +308,9 @@ function connect () {
 				adminPanel.getResult()
 			}
 		}
+		else if (data.type === 'error') {
+			alert(data.message)
+		}
 		else if (data.type === 'announcements') {
 			announcementsPanel.announcements = data.announcements
 		}
