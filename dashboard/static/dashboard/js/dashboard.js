@@ -92,6 +92,7 @@ var problemPanel = new Vue({
 			language: 'python',
 			content: ''
 		},
+		submissionEditor: false,
 		codes: codes,
 		result: null,
 		results: [],
@@ -112,6 +113,7 @@ var problemPanel = new Vue({
 			if (language = {"py": "python", "cpp": "c++", "java": "java"}[file.name.split('.').slice(-1)[0]]) {
 				this.submission.language = language
 			}
+			this.submissionEditor = false
 			var reader = new FileReader()
 			reader.onload = function (e) {
 				this.submission.content = e.target.result
@@ -119,16 +121,22 @@ var problemPanel = new Vue({
 			reader.readAsText(file)
 		},
 		submit () {
+			if (this.submission.content && !this.submission.filename) this.submission.filename = 'submission.'+{"python": "py", "c++": "cpp", "java": "java"}[this.submission.language]
 			ws.send(JSON.stringify({'type': 'submit', 'submission': this.submission, 'problem': this.problem.slug}))
 			this.$refs.fileInput.value = null
 			this.submission.filename = ''
 			this.submission.content = ''
+			this.submissionEditor = false
 		},
 		setTestCase (tindex) {
 			ws.send(JSON.stringify({'type': 'get_test_case', 'case': this.results[this.result].tests[tindex].id}))
 			setTimeout(function () {
 				this.testInfo = tindex
 			}.bind(this), 10)
+		},
+		openSubmissionEditor () {
+			this.submissionEditor = true
+			this.submission.filename = ''
 		}
 	}
 })

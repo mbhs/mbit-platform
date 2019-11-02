@@ -47,6 +47,8 @@
 			</div>
 			<div class="column panel" id="problem-panel" v-show="state.panel === 'problem'" v-cloak>
 				<h3 class="is-4 subtitle submission">Submission</h3>
+				<button class="button" style="margin-bottom: 0.8rem" v-show="!submissionEditor" @click="openSubmissionEditor()">Open Submission Editor</button>
+				<textarea v-model="submission.content" class="textarea code" placeholder="Enter code here" style="margin-bottom: 0.8rem" v-show="submissionEditor"></textarea>
 				<div class="file has-name is-boxed program-upload">
 					<label class="file-label">
 						<input class="file-input" type="file" ref="fileInput" @change="setFile($event.target.files[0])">

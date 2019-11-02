@@ -6823,3 +6823,6 @@ pre {
 
 .panel {
   width: 80%; }
+
+.textarea.code {
+  font-family: monospace; }
