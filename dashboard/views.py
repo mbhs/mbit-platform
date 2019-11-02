@@ -4,6 +4,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.http import Http404, HttpResponse
 from django.contrib.auth import get_user_model
 from django.db.models import Count
+import json
 
 def index(request):
 	if request.user.is_authenticated:
@@ -21,10 +22,16 @@ def submission(request, id, filename):
 
 def scores(request):
 	out = ""
+	scores = {}
 	if request.user.is_staff:
 		for user in get_user_model().objects.all():
+			scores[user.profile.name] = 0
+			out += "="*10 + " " + user.profile.name + " " + "="*10 + "\n"
 			for problem in user.submission_set.order_by('problem__name', '-timestamp').distinct('problem__name').prefetch_related('testcaseresult_set'):
-				out += problem.problem.name + " " + str(problem.testcaseresult_set.filter(test_case__preliminary=False).filter(result='correct').count()) + "\n"
+				grade = problem.testcaseresult_set.filter(test_case__preliminary=False).filter(result='correct').count()
+				out += problem.problem.name + " " + str(grade) + "\n"
+				scores[user.profile.name] += grade
+		out += "\n" + json.dumps(scores)
 		return HttpResponse(out, content_type="text/plain")
 	else:
 		return redirect('/login')
