@@ -98,15 +98,13 @@ var problemPanel = new Vue({
 		results: [],
 		testInfo: null,
 		state: state,
-		descriptions: descriptions
+		descriptions: descriptions,
+		inputDownload: ''
 	},
 	watch: {
 		'problem.slug': function (slug) {
 			this.testInfo = null
 			ws.send(JSON.stringify({'type': 'get_problem', 'slug': slug}))
-		},
-		'testInfo': function () {
-			this.removeClickForInfo()
 		}
 	},
 	methods: {
@@ -135,7 +133,9 @@ var problemPanel = new Vue({
 			ws.send(JSON.stringify({'type': 'get_test_case', 'case': this.results[this.result].tests[tindex].id}))
 			setTimeout(function () {
 				this.testInfo = tindex
+				this.removeClickForInfo()
 			}.bind(this), 10)
+			if (this.inputDownload) URL.revokeObjectURL(this.inputDownload)
 		},
 		openSubmissionEditor () {
 			this.submissionEditor = true
@@ -274,6 +274,12 @@ function connect () {
 				for (var tindex = 0; tindex < problemPanel.results[problemPanel.result].tests.length; tindex++) {
 					if (problemPanel.results[problemPanel.result].tests[tindex].id === data.case.id) {
 						Vue.set(problemPanel.results[problemPanel.result].tests, tindex, data.case)
+						setTimeout(function () {
+							if (this.tindex === problemPanel.testInfo && this.data.case.stdin) {
+								var blob = new Blob([data.case.stdin], { type: "text/plain;charset=utf-8" })
+								problemPanel.inputDownload = URL.createObjectURL(blob)
+							}
+						}.bind({ tindex, data }), 100)
 					}
 				}
 			}

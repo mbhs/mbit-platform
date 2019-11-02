@@ -6826,3 +6826,7 @@ pre {
 
 .textarea.code {
   font-family: "Roboto Mono", monospace; }
+
+.input-download {
+  color: #932216 !important;
+  text-decoration: none !important; }

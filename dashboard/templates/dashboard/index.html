@@ -95,7 +95,7 @@
 					<div class="code-description notification" v-if="testInfo !== null &amp;&amp; results[result].tests[testInfo].result in descriptions">
 						<button class="delete" @click="testInfo = null"></button>
 						<strong>[[ descriptions[results[result].tests[testInfo].result].name ]].</strong> [[ descriptions[results[result].tests[testInfo].result].body ]]
-						<p v-show="results[result].tests[testInfo].stdin">Input</p>
+						<p v-show="results[result].tests[testInfo].stdin">Input<a v-show="inputDownload" class="input-download" :href="inputDownload" style="float: right" :download="problem.slug+'_'+results[result].tests[testInfo].num+'.txt'"><i class="fas fa-file-download"></i> Download</a></p>
 						<pre v-show="results[result].tests[testInfo].stdin">[[ results[result].tests[testInfo].stdin ]]</pre>
 						<p v-show="results[result].tests[testInfo].stdout">Output</p>
 						<pre v-show="results[result].tests[testInfo].stdout">[[ results[result].tests[testInfo].stdout ]]</pre>
