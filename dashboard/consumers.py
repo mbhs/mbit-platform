@@ -110,7 +110,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 			if len(content['submission']['content']) >  1000000:
 				self.send_json({'type': 'error', 'message': 'Submission too large.'})
 				return
-			if len(self.scope['user'].submission_set.filter(timestamp__gte=datetime.now()-datetime.timedelta(minutes=5))) >= 20:
+			if len(self.scope['user'].submission_set.filter(timestamp__gte=datetime.now()-timedelta(minutes=5))) >= 20:
 				self.send_json({'type': 'error', 'message': 'Too many submissions! Try again in 5 minutes.'})
 				return
 			try: problem_obj = self.problems.get(slug=content['problem'])
