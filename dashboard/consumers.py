@@ -107,6 +107,9 @@ class DashboardConsumer(JsonWebsocketConsumer):
 				'case': list(result_obj.values('result', 'id', 'stdout', 'stderr', num=F('test_case__num'), stdin=F('test_case__stdin')))[0]
 			})
 		elif content['type'] == 'submit' and 'problem' in content and 'submission' in content and content['submission'].get('filename') and content['submission'].get('language') in ('python', 'java', 'c++') and content['submission'].get('content'):
+			if len(content['submission']['content']) >  1000000:
+				self.send_json({'type': 'error', 'message': 'Submission too large.'})
+				return
 			try: problem_obj = self.problems.get(slug=content['problem'])
 			except ObjectDoesNotExist: return
 			submission = Submission(code=content['submission']['content'].replace('\x00', ''), filename=content['submission']['filename'], language=content['submission']['language'], user=self.scope['user'], problem=problem_obj)
