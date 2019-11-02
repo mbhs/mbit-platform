@@ -19,7 +19,7 @@ def submission(request, id, filename):
 	else:
 		return redirect('/login')
 
-def scores(request, id, filename):
+def scores(request):
 	out = ""
 	if request.user.is_staff:
 		for user in get_user_model.objects.all():
