@@ -22,8 +22,8 @@ def submission(request, id, filename):
 def scores(request):
 	out = ""
 	if request.user.is_staff:
-		for user in get_user_model.objects.all():
-			for problem in get_user_model().objects.get(username='admin').submission_set.order_by('problem__name', '-timestamp').distinct('problem__name').prefetch_related('testcaseresult_set'):
+		for user in get_user_model().objects.all():
+			for problem in user.submission_set.order_by('problem__name', '-timestamp').distinct('problem__name').prefetch_related('testcaseresult_set'):
 				out += problem.name + " " + problem.testcaseresult_set.filter(test_case__preliminary=False).filter(result='correct').count() + "\n"
 		return HttpResponse(out, content_type="text/plain")
 	else:
