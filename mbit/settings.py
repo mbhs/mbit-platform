@@ -23,9 +23,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = '-50c8o4&-*h9a%mjlamh5p(u4#^_4#o2gad5s0a$cb*otlqys1'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ["localhost", "mbit.mbhs.edu"]
+ALLOWED_HOSTS = ["mbit.live"]
 
 
 # Application definition
@@ -88,11 +88,14 @@ CHANNEL_LAYERS = {
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'mbit',
+        'USER': 'mbit',
+        'PASSWORD': 'c3bb09d5f738c36972ee2bd4994f30d6',
+        'HOST': '127.0.0.1',
+        'PORT': '5432',
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators

@@ -127,19 +127,19 @@ class DashboardConsumer(JsonWebsocketConsumer):
 					'time': int(submission.timestamp.timestamp()*1000)
 				}
 			})
-			grade.delay({
+			grade.apply_async(args=({
 				'type': 'grade',
 				'problem': content['problem'],
 				'submission': submission.id,
 				'user_group': self.user_group,
 				'preliminary': True
-			})
-			grade.delay({
+			},), queue='pretests')
+			grade.apply_async(args=({
 				'type': 'grade',
 				'problem': content['problem'],
 				'submission': submission.id,
 				'preliminary': False
-			})
+			},), queue='systemtests')
 		elif content['type'] == 'get_announcements':
 			self.send_announcements()
 		elif self.scope['user'].is_staff:
@@ -184,10 +184,10 @@ class DashboardConsumer(JsonWebsocketConsumer):
 				team = get_user_model().objects.get(username=content['team'])
 				problem = Problem.objects.get(slug=content['problem'])
 				submission = team.submission_set.filter(problem=problem).order_by('-timestamp').first()
-				grade.delay({
+				grade.apply_async(args=({
 					'type': 'grade',
 					'problem': content['problem'],
 					'submission': submission.id,
 					'channel': self.channel_name,
 					'preliminary': False
-				})
+				},), queue='systemtests')
