@@ -2,7 +2,7 @@ from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.shortcuts import render, redirect
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import Http404, HttpResponse
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, authenticate, login
 from django.db.models import Count
 import json
 
@@ -19,6 +19,18 @@ def submission(request, id, filename):
 		return HttpResponse(submission_obj.code, content_type="text/plain")
 	else:
 		return redirect('/login')
+
+def register(request):
+	if request.method == 'POST':
+		form = UserCreationForm(data=request.POST)
+		if form.is_valid():
+			form.save()
+			user = authenticate(username=form.cleaned_data['username'], password=form.cleaned_data['password1'])
+			login(request, user)
+			return redirect('/')
+	else:
+		form = UserCreationForm()
+	return render(request, 'dashboard/register.html', {'form': form})
 
 def scores(request):
 	out = ""

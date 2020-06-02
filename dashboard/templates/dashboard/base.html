@@ -34,10 +34,13 @@
   	        <div class="buttons">
               {% if user.is_authenticated %}
                 <a class="button is-primary" style="pointer-events: none">
-                  <strong>{{ user.profile.name }}</strong>
+                  <strong>{{ user.username }}</strong>
                 </a>
                 <a class="button is-light" href="/logout">Logout</a>
               {% else %}
+                <a class="button is-primary" href="/register">
+                  <strong>Register</strong>
+                </a>
                 <a class="button is-light" href="/login">Login</a>
               {% endif %}
   	        </div>

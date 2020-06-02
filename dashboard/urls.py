@@ -8,6 +8,7 @@ urlpatterns = [
 	path('', views.index, name='index'),
 	path('scores', views.scores, name='scores'),
 	path('login', auth_views.LoginView.as_view(template_name='dashboard/login.html'), name='login'),
-    path('logout', auth_views.LogoutView.as_view(next_page='/login')),
-    path('submission/<int:id>/<str:filename>', views.submission)
+	path('logout', auth_views.LogoutView.as_view(next_page='/login')),
+	path('register', views.register, name='register'),
+	path('submission/<int:id>/<str:filename>', views.submission)
 ]

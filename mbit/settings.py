@@ -20,12 +20,14 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '-50c8o4&-*h9a%mjlamh5p(u4#^_4#o2gad5s0a$cb*otlqys1'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'AAAAAAAA')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
-
-ALLOWED_HOSTS = ["mbit.live"]
+if os.environ.get('DEBUG'):
+    DEBUG = True
+else:
+    DEBUG = False
+    ALLOWED_HOSTS = ["mbit.live"]
 
 
 # Application definition
@@ -88,12 +90,8 @@ CHANNEL_LAYERS = {
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'mbit',
-        'USER': 'mbit',
-        'PASSWORD': 'c3bb09d5f738c36972ee2bd4994f30d6',
-        'HOST': '127.0.0.1',
-        'PORT': '5432',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
 

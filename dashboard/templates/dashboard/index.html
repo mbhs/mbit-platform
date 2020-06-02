@@ -19,8 +19,9 @@
 				</p>
 				<ul class="menu-list">
 					<li><a @click="navigate('announcements', null)" :class="{ 'is-active': panel === 'announcements' }">Announcements <div class="badge" v-if="unread > 0">[[ unread ]]</div></a></li>
+					<li><a @click="navigate('profile', null)" :class="{ 'is-active': panel === 'profile' }">Profile</a></li>
 				</ul>
-				<p class="menu-label">
+				<p class="menu-label" v-if="problems.length">
 					Problems
 				</p>
 				<ul class="menu-list">
@@ -44,6 +45,85 @@
 					</header>
 					<div class="card-content">[[ announcement.content ]]</div>
 				</div>
+			</div>
+			<div class="column panel" id="profile-panel" v-show="state.panel === 'profile'" v-cloak>
+				<form @submit.prevent="saveProfile">
+					<article class="message is-primary" v-if="noProfile">
+						<div class="message-body content">
+							<p><strong>Complete your team profile to finish registration.</strong></p>
+							<ul>
+								<li>Leave slots blank if you have fewer than four members</li>
+								<li>You may not change your division after the competition begins</li>
+							</ul>
+						</div>
+					</article>
+					<article class="message is-success" v-if="profile.eligible === true">
+						<div class="message-body">
+							<p>Your team is eligible for prizes.</p>
+						</div>
+					</article>
+					<article class="message is-primary" v-if="noProfile === false &amp;&amp; profile.eligible &amp;&amp; profile.eligible !== true">
+						<div class="message-body content">
+							<p>Your team is not eligible for prizes:</p>
+							<ul>
+								<li v-if="profile.eligible.incomplete">Incomplete member information</li>
+								<li v-if="profile.eligible.ineligible">Ineligible members</li>
+							</ul>
+						</div>
+					</article>
+					<article class="message is-primary" v-if="unsavedChanges">
+						<div class="message-body">
+							<p>Your profile has unsaved changes.</p>
+							<button class="button is-primary" style="margin-top: 0.5rem;" type="submit">Save Profile</button>
+						</div>
+					</article>
+					<label class="label">Team</label>
+					<div class="field is-grouped" :class="{'name-conflict': nameConflict}">
+						<div class="control is-expanded">
+							<input class="input" type="text" placeholder="Name" required v-model="profile.name" @blur="blurred">
+						</div>
+						<div class="control">
+							<div class="select"><select required v-model="profile.division" @change="unsavedChanges = true">
+								<option v-for="division in divisions" :value="division.id">[[ division.name ]]</option>
+							</select></div>
+						</div>
+					</div>
+					<div class="field" v-if="nameConflict">
+						<div class="help is-danger">
+							<ul class="errorlist"><li>A team with that name already exists.</li></ul>
+						</div>
+					</div>
+					<label class="label">Members</label>
+					<div class="box" v-for="n, i in teamSize" :key="i" style="margin-bottom: 1rem;">
+						<div class="field is-grouped">
+							<div class="control is-expanded">
+								<input class="input" type="text" placeholder="Full Name" v-model="profile.members[i].name" @blur="blurred">
+							</div>
+							<div class="control is-expanded">
+								<input class="input" type="email" placeholder="Email" v-model="profile.members[i].email" @blur="blurred">
+							</div>
+						</div>
+						<div class="field is-grouped">
+							<div class="control is-expanded">
+								<input class="input" type="text" placeholder="School" v-model="profile.members[i].school" @blur="blurred">
+							</div>
+							<div class="control">
+								<div class="select"><select v-model="profile.members[i].grade" @change="unsavedChanges = true">
+									<option></option>
+									<option value="5">5th grade or younger</option>
+									<option value="6">6th grade</option>
+									<option value="7">7th grade</option>
+									<option value="8">8th grade</option>
+									<option value="9">9th grade</option>
+									<option value="10">10th grade</option>
+									<option value="11">11th grade</option>
+									<option value="12">12th grade</option>
+									<option value="13">Ineligible</option>
+								</select></div>
+							</div>
+						</div>
+					</div>
+				</form>
 			</div>
 			<div class="column panel" id="problem-panel" v-show="state.panel === 'problem'" v-cloak>
 				<h3 class="is-4 subtitle submission">Submission</h3>

@@ -8,6 +8,8 @@ class Profile(models.Model):
 	user = models.OneToOneField(get_user_model(), on_delete=models.CASCADE)
 	name = models.TextField(unique=True)
 	division = models.ForeignKey(Division, on_delete=models.CASCADE)
+	eligible = models.BooleanField(blank=True, null=True)
+	members = models.TextField(blank=True)
 
 class Round(models.Model):
 	name = models.CharField(max_length=64)

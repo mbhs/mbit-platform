@@ -11,8 +11,12 @@
 </section>
 <section class="section">
 	<div class="container">
+		<div class="notification is-primary">
+			Register one account per team. You will fill out your profile after registration.
+		</div>
 		{% if form.non_field_errors %}
 			<div class="notification is-danger">
+				<button class="delete"></button>
 				{{ form.non_field_errors }}
 			</div>
 		{% endif %}
@@ -30,6 +34,7 @@
 						{% endif %}
 					</div>
 				{% endfor %}
+				<input type="hidden" name="next" value="/">
 				<button type="submit" class="button is-primary">Register</button>
 			</form>
 		</div>

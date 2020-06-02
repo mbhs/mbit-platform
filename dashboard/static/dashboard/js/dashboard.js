@@ -75,6 +75,68 @@ var announcementsPanel = new Vue({
 				navigation.unread += 1
 			}
 			this.first = false
+			if (profilePanel.noProfile) navigation.unread = this.announcements.length
+		}
+	}
+})
+
+var profilePanel = new Vue({
+	el: '#profile-panel',
+	delimiters: ['[[', ']]'],
+	data: {
+		state: state,
+		divisions: ['Standard', 'Advanced'],
+		teamSize: 4,
+		profile: {
+			name: '',
+			division: null,
+			eligible: null,
+			members: [
+				{
+					name: '',
+					email: '',
+					school: '',
+					grade: null
+				},
+				{
+					name: '',
+					email: '',
+					school: '',
+					grade: null
+				},
+				{
+					name: '',
+					email: '',
+					school: '',
+					grade: null
+				},
+				{
+					name: '',
+					email: '',
+					school: '',
+					grade: null
+				}
+			]
+		},
+		noProfile: false,
+		changed: false,
+		unsavedChanges: false,
+		nameConflict: false
+	},
+	methods: {
+		saveProfile: function () {
+			ws.send(JSON.stringify({'type': 'save_profile', 'division': this.profile.division, 'name': this.profile.name, 'members': this.profile.members.filter(m => m.name || m.email || m.school || m.grade).map(m => Object.assign({}, m, {grade: parseInt(m.grade)}))}))
+		},
+		blurred: function () {
+			if (this.changed) this.unsavedChanges = true
+		}
+	},
+	watch: {
+		profile: {
+			handler: function () {
+				this.changed = true
+			},
+			deep: true
 		}
 	}
 })
@@ -251,7 +313,28 @@ function connect () {
 	ws.addEventListener('message', function (event) {
 		var data = JSON.parse(event.data)
 		if (data.type === 'problems') navigation.problems = data.problems
-		else if (data.type === 'admin') navigation.admin = true
+		else if (data.type === 'profile') {
+			profilePanel.noProfile = false
+			profilePanel.unsavedChanges = false
+			profilePanel.changed = false
+			profilePanel.nameConflict = false
+			profilePanel.profile = data.profile
+			ws.send(JSON.stringify({'type': 'get_problems'}))
+		}
+		else if (data.type === 'divisions') {
+			profilePanel.divisions = data.divisions
+			profilePanel.division = data.divisions[0].id
+		}
+		else if (data.type === 'admin') {
+			navigation.admin = true
+			ws.send(JSON.stringify({'type': 'admin_problems'}))
+			ws.send(JSON.stringify({'type': 'admin_teams'}))
+		}
+		else if (data.type === 'no_profile') {
+			profilePanel.noProfile = true
+			navigation.navigate('profile', null, true)
+			navigation.unread = announcementsPanel.announcements.length
+		}
 		else if (data.type === 'problem') {
 			problemPanel.problem.name = data.problem.name
 			problemPanel.results = data.problem.results
@@ -311,7 +394,8 @@ function connect () {
 			}
 		}
 		else if (data.type === 'error') {
-			alert(data.message)
+			if (data.message === 'team_name_conflict') profilePanel.nameConflict = true
+			else alert(data.message)
 		}
 		else if (data.type === 'announcements') {
 			announcementsPanel.announcements = data.announcements
@@ -319,11 +403,8 @@ function connect () {
 	})
 
 	ws.addEventListener('open', function (event) {
-		closeModals()
-		ws.send(JSON.stringify({'type': 'get_problems'}))
-		ws.send(JSON.stringify({'type': 'admin_problems'}))
-		ws.send(JSON.stringify({'type': 'admin_teams'}))
 		ws.send(JSON.stringify({'type': 'get_announcements'}))
+		closeModals()
 	})
 
 	ws.addEventListener('close', function (event) {

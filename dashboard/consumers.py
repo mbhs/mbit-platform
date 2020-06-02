@@ -5,25 +5,27 @@ from django.forms.models import model_to_dict
 from asgiref.sync import async_to_sync
 from channels.auth import get_user
 from .models import Problem, Submission, TestCaseGroup, TestCaseResult, Announcement, Division, Profile, Round
+from django.db import IntegrityError
 from django.db.models import Count, F
 from django.contrib.auth import get_user_model
 from .tasks import grade
 
 from datetime import datetime, timedelta
-import requests
-import secrets
-import os
-import shutil
-import subprocess
+import json
 
 class DashboardConsumer(JsonWebsocketConsumer):
 	def connect(self):
 		async_to_sync(self.channel_layer.group_add)("users", self.channel_name)
 		async_to_sync(self.channel_layer.group_add)('user'+str(self.scope['user'].id), self.channel_name)
 		self.user_group = 'user'+str(self.scope['user'].id)
-		self.division = self.scope['user'].profile.division
-		self.problems = Problem.objects.filter(round__division=self.division, round__start__lte=datetime.now(), round__end__gte=datetime.now())
 		self.accept()
+		self.send_json({'type': 'divisions', 'divisions': list(Division.objects.all().values('id', 'name'))})
+		if hasattr(self.scope['user'], 'profile'):
+			self.division = self.scope['user'].profile.division
+			self.problems = Problem.objects.filter(round__division=self.division, round__start__lte=datetime.now(), round__end__gte=datetime.now())
+			self.send_profile()
+		else:
+			self.send_json({'type': 'no_profile'})
 		if self.scope['user'].is_staff: self.send_json({'type': 'admin'})
 
 	def disconnect(self, close_code):
@@ -47,6 +49,21 @@ class DashboardConsumer(JsonWebsocketConsumer):
 		self.send_json({
 			'type': 'announcements',
 			'announcements': list(map(lambda a: dict(a, **{'timestamp': int(a['timestamp'].timestamp()*1000)}), Announcement.objects.order_by('-timestamp').values('title', 'content', 'timestamp')))
+		})
+
+	def send_profile(self, even=None):
+		try: profile = model_to_dict(Profile.objects.get(user=self.scope['user']))
+		except ObjectDoesNotExist: return
+		profile['members'] = json.loads(profile['members'])
+		if not profile['eligible']:
+			profile['eligible'] = {'incomplete': len(profile['members']) == 0, 'ineligible': False}
+			for member in profile['members']:
+				if len(member['name']) == 0 or len(member['school']) == 0 or len(member['email']) == 0 or member['grade'] == None: profile['eligible']['incomplete'] = True
+				if member['grade'] == 13: profile['eligible']['ineligible'] = True
+		if len(profile['members']) < 4: profile['members'] += [{'name': '', 'email': '', 'grade': None} for i in range(4 - len(profile['members']))]
+		self.send_json({
+			'type': 'profile',
+			'profile': profile
 		})
 
 	def send_admin_teams(self, event=None):
@@ -76,7 +93,32 @@ class DashboardConsumer(JsonWebsocketConsumer):
 
 	def receive_json(self, content):
 		if 'type' not in content: return
-		if content['type'] == 'get_problems':
+		if content['type'] == 'save_profile' and 'division' in content and 'name' in content and 'members' in content:
+			try:
+				eligible = len(content['members']) > 0
+				cleaned = []
+				for member in content['members']:
+					if type(member.get('name')) is not str or type(member.get('school')) is not str or type(member.get('email')) is not str or not ('grade' in member and member['grade'] == None or type(member.get('grade')) is int and 5 <= member['grade'] <= 13): return
+					if len(member['name']) == 0 or len(member['school']) == 0 or len(member['email']) == 0 or member['grade'] == None or member['grade'] == 13: eligible = False
+					cleaned.append({'name': member.get('name'), 'school': member.get('school'), 'email': member.get('email'), 'grade': member.get('grade')})
+			except json.JSONDecodeError:
+				return
+			try:
+				if not hasattr(self.scope['user'], 'profile'):
+					profile = Profile(division=Division.objects.get(id=content['division']), user=self.scope['user'], name=content['name'], members=json.dumps(cleaned), eligible=eligible)
+					profile.save()
+				else:
+					self.scope['user'].profile.division = Division.objects.get(id=content['division'])
+					self.scope['user'].profile.name = content['name']
+					self.scope['user'].profile.members = json.dumps(cleaned)
+					self.scope['user'].profile.eligible = eligible
+					self.scope['user'].profile.save()
+			except IntegrityError:
+				self.send_json({'type': 'error', 'message': 'team_name_conflict'})
+			self.division = self.scope['user'].profile.division
+			self.problems = Problem.objects.filter(round__division=self.division, round__start__lte=datetime.now(), round__end__gte=datetime.now())
+			self.send_profile()
+		elif content['type'] == 'get_problems':
 			self.send_json({
 				'type': 'problems',
 				'problems': list(self.problems.order_by('id').values('name', 'slug'))
@@ -86,7 +128,6 @@ class DashboardConsumer(JsonWebsocketConsumer):
 			except ObjectDoesNotExist: return
 			problem = model_to_dict(problem_obj, fields=['name', 'slug'])
 			testcasecount = problem_obj.testcase_set.filter(preliminary=True).aggregate(tests=Count("id"))["tests"]
-			import random
 			results = problem_obj.submission_set.filter(user=self.scope['user']).order_by('-timestamp')
 			problem['results'] = []
 			for resultobj in results:
