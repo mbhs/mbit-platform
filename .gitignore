@@ -1,0 +1,4 @@
+dashboard/checkers
+.sass-cache
+__pycache__
+db.sqlite3
