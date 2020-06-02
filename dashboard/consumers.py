@@ -104,7 +104,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 			except json.JSONDecodeError:
 				return
 			try:
-				if Profile.objects.filter(name__iexact=content['name']).exists(): raise IntegrityError('Team name conflict')
+				if Profile.objects.filter(name__iexact=content['name']).exclude(user=self.scope['user']).exists(): raise IntegrityError('Team name conflict')
 				if not hasattr(self.scope['user'], 'profile'):
 					profile = Profile(division=Division.objects.get(id=content['division']), user=self.scope['user'], name=content['name'], members=json.dumps(cleaned), eligible=eligible)
 					profile.save()
