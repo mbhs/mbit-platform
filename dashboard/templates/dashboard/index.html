@@ -43,7 +43,7 @@
 							[[ announcement.title ]]&ensp;<small class="has-text-weight-normal">[[ new Date(announcement.timestamp).toLocaleString() ]]</small>
 						</p>
 					</header>
-					<div class="card-content">[[ announcement.content ]]</div>
+					<div class="card-content" v-html="announcement.content"></div>
 				</div>
 			</div>
 			<div class="column panel" id="profile-panel" v-show="state.panel === 'profile'" v-cloak>
