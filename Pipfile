@@ -12,7 +12,6 @@ gunicorn = "*"
 requests = "*"
 channels-redis = "*"
 celery = {extras = ["redis"],version = "*"}
-psycopg2 = "*"
 daphne = "*"
 msgpack = "*"
 
