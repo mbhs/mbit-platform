@@ -116,6 +116,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 					self.scope['user'].profile.save()
 			except IntegrityError:
 				self.send_json({'type': 'error', 'message': 'team_name_conflict'})
+				return
 			self.division = self.scope['user'].profile.division
 			self.problems = Problem.objects.filter(round__division=self.division, round__start__lte=datetime.now(), round__end__gte=datetime.now())
 			self.send_profile()
