@@ -30,7 +30,7 @@ def register(request):
 			return redirect('/')
 	else:
 		form = UserCreationForm()
-	return render(request, 'dashboard/register.html', {'form': form})
+	return redirect('/') if request.user.is_authenticated else render(request, 'dashboard/register.html', {'form': form})
 
 def scores(request):
 	out = ""
