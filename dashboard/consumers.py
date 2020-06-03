@@ -60,7 +60,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 			for member in profile['members']:
 				if len(member['name']) == 0 or len(member['school']) == 0 or len(member['email']) == 0 or member['grade'] == None: profile['eligible']['incomplete'] = True
 				if member['grade'] == 13: profile['eligible']['ineligible'] = True
-		if len(profile['members']) < 4: profile['members'] += [{'name': '', 'email': '', 'grade': None} for i in range(4 - len(profile['members']))]
+		if len(profile['members']) < 4: profile['members'] += [{'name': '', 'email': '', 'school': '', 'grade': None} for i in range(4 - len(profile['members']))]
 		self.send_json({
 			'type': 'profile',
 			'profile': profile
