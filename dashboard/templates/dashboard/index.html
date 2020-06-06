@@ -47,6 +47,9 @@
 				</div>
 			</div>
 			<div class="column panel" id="profile-panel" v-show="state.panel === 'profile'" v-cloak>
+				<div class="content">
+					<a href="/changepassword" class="button">Change Password</a>
+				</div>
 				<form @submit.prevent="saveProfile">
 					<article class="message is-primary" v-if="noProfile">
 						<div class="message-body content">
