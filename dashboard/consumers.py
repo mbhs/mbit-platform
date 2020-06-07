@@ -7,6 +7,7 @@ from channels.auth import get_user
 from .models import Problem, Submission, TestCaseGroup, TestCaseResult, Announcement, Division, Profile, Round
 from django.db import IntegrityError
 from django.db.models import Count, F
+from django.utils import timezone
 from django.contrib.auth import get_user_model
 from .tasks import grade
 
@@ -203,7 +204,9 @@ class DashboardConsumer(JsonWebsocketConsumer):
 						if not problem.submission_set.filter(user=profile.user).exists():
 							team['problems'][problem.name] = 'X'
 							continue
-						score = problem.submission_set.filter(user=profile.user).order_by('-timestamp').first().testcaseresult_set.filter(test_case__preliminary=True).filter(result='correct').count()
+						if self.scope['user'].is_staff or round.end < timezone.now(): score = problem.submission_set.filter(user=profile.user).order_by('-timestamp').first().testcaseresult_set.filter(test_case__preliminary=False).filter(result='correct').count()
+						else: score = problem.submission_set.filter(user=profile.user).order_by('-timestamp').first().testcaseresult_set.filter(test_case__preliminary=True).filter(result='correct').count()
+						if score == 40: score += 20
 						team['problems'][problem.name] = score
 						team['total'] += score
 				teams.append(team)
