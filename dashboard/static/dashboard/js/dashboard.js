@@ -80,6 +80,28 @@ var announcementsPanel = new Vue({
 	}
 })
 
+var leaderboardPanel = new Vue({
+	el: '#leaderboard-panel',
+	delimiters: ['[[', ']]'],
+	data: {
+		state: state,
+		divisions: [],
+		division: null,
+		teams: [],
+		problems: []
+	},
+	watch: {
+		division: function () {
+			this.refresh()
+		}
+	},
+	methods: {
+		refresh: function () {
+			ws.send(JSON.stringify({'type': 'get_leaderboard', 'division': this.division}))
+		}
+	}
+})
+
 var profilePanel = new Vue({
 	el: '#profile-panel',
 	delimiters: ['[[', ']]'],
@@ -322,8 +344,15 @@ function connect () {
 			ws.send(JSON.stringify({'type': 'get_problems'}))
 		}
 		else if (data.type === 'divisions') {
+			leaderboardPanel.divisions = data.divisions
+			leaderboardPanel.division = data.divisions[0].name
 			profilePanel.divisions = data.divisions
 			profilePanel.division = data.divisions[0].id
+		}
+		else if (data.type === 'leaderboard') {
+			data.teams.sort((a, b) => b.total - a.total)
+			leaderboardPanel.teams = data.teams
+			leaderboardPanel.problems = data.problems
 		}
 		else if (data.type === 'admin') {
 			navigation.admin = true

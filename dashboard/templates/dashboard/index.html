@@ -19,6 +19,7 @@
 				</p>
 				<ul class="menu-list">
 					<li><a @click="navigate('announcements', null)" :class="{ 'is-active': panel === 'announcements' }">Announcements <div class="badge" v-if="unread > 0">[[ unread ]]</div></a></li>
+					<li><a @click="navigate('leaderboard', null)" :class="{ 'is-active': panel === 'leaderboard' }" v-if="problems.length">Leaderboard</a></li>
 					<li><a @click="navigate('profile', null)" :class="{ 'is-active': panel === 'profile' }">Profile</a></li>
 				</ul>
 				<p class="menu-label" v-if="problems.length">
@@ -45,6 +46,36 @@
 					</header>
 					<div class="card-content" v-html="announcement.content"></div>
 				</div>
+			</div>
+			<div class="column panel" id="leaderboard-panel" v-show="state.panel === 'leaderboard'" v-cloak>
+				<div class="notification is-primary">
+					This leaderboard is based on the results of pretests. <strong>It is not indicative of actual rankings.</strong>
+				</div>
+				<div class="field">
+					<label class="label">Division</label>
+					<div class="select"><select required v-model="division">
+						<option v-for="division in divisions" :value="division.name">[[ division.name ]]</option>
+					</select></div>
+					<button @click="refresh" class="button is-primary">Refresh</button>
+				</div>
+				<table class="table is-fullwidth">
+					<thead>
+						<tr>
+							<th style="vertical-align: bottom">Name</th>
+							<th style="vertical-align: bottom">Eligible</th>
+							<th style="vertical-align: bottom" v-for="problem in problems"><abbr :title="problem">[[ problem.split(' ').map(a => a[0]).join('') ]]</abbr></th>
+							<th style="vertical-align: bottom">Total</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr v-for="team in teams" v-if="team.division === division">
+							<td>[[ team.name ]]</td>
+							<td>[[ team.eligible ? 'Yes' : 'No' ]]</td>
+							<td v-for="problem in problems">[[ team.problems[problem] ]]</td>
+							<td>[[ team.total ]]</td>
+						</tr>
+					</tbody>
+				</table>
 			</div>
 			<div class="column panel" id="profile-panel" v-show="state.panel === 'profile'" v-cloak>
 				<div class="content">

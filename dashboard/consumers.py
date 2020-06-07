@@ -159,6 +159,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 				return
 			try: problem_obj = self.problems.get(slug=content['problem'])
 			except ObjectDoesNotExist: return
+			if not problem_obj.rounds.filter(start__lte=datetime.now(), end__gte=datetime.now()).exists(): return
 			submission = Submission(code=content['submission']['content'].replace('\x00', ''), filename=content['submission']['filename'], language=content['submission']['language'], user=self.scope['user'], problem=problem_obj)
 			submission.save()
 			self.send_json({
@@ -186,6 +187,27 @@ class DashboardConsumer(JsonWebsocketConsumer):
 			},), queue='systemtests')
 		elif content['type'] == 'get_announcements':
 			self.send_announcements()
+		elif content['type'] == 'get_leaderboard' and 'division' in content:
+			teams = []
+			problems = []
+			try: division = Division.objects.get(name=content['division'])
+			except ObjectDoesNotExist: return
+			for profile in division.profile_set.all():
+				team = {'total': 0, 'problems': {}}
+				team['name'] = profile.name
+				team['eligible'] = profile.eligible
+				for round in division.round_set.filter(start__lte=datetime.now()):
+					team['division'] = round.division.name
+					for problem in round.problem_set.all():
+						problems.append(problem.name)
+						if not problem.submission_set.filter(user=profile.user).exists():
+							team['problems'][problem.name] = 'X'
+							continue
+						score = problem.submission_set.filter(user=profile.user).order_by('-timestamp').first().testcaseresult_set.filter(test_case__preliminary=True).filter(result='correct').count()
+						team['problems'][problem.name] = score
+						team['total'] += score
+				teams.append(team)
+			self.send_json({'type': 'leaderboard', 'teams': teams, 'problems': problems})
 		elif self.scope['user'].is_staff:
 			if content['type'] == 'admin_problems':
 				self.send_admin_problems()
