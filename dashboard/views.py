@@ -42,6 +42,7 @@ def scores(request):
 			out += "="*10 + " " + user.profile.name + " " + "="*10 + "\n"
 			for round in user.profile.division.round_set.all():
 				for problem in round.problem_set.all():
+					if not problem.submission_set.filter(user=user).exists(): continue
 					grade = problem.submission_set.filter(user=user).order_by('-timestamp').first().testcaseresult_set.filter(test_case__preliminary=False).filter(result='correct').count()
 					out += problem.name + " " + str(grade) + "\n"
 					scores[user.profile.name] += grade
