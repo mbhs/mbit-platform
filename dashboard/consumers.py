@@ -199,7 +199,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 				for round in division.round_set.filter(start__lte=datetime.now()):
 					team['division'] = round.division.name
 					for problem in round.problem_set.all():
-						problems.append(problem.name)
+						if problem.name not in problems: problems.append(problem.name)
 						if not problem.submission_set.filter(user=profile.user).exists():
 							team['problems'][problem.name] = 'X'
 							continue
