@@ -33,7 +33,7 @@ def grade(event):
 				s.sendall(b'pretests\n' if event['preliminary'] else b'tests\n')
 				s.sendall(submission.language.encode('utf-8')+b'\n')
 				s.sendall(submission.filename.encode('utf-8')+b'\n')
-				s.sendall(str(getattr(submission.problem, submission.language.replace('+', 'p')+'_time')).encode('utf-8')+b'\n')
+				s.sendall(str(getattr(submission.problem, submission.language.replace('pypy', 'python').replace('+', 'p')+'_time')).encode('utf-8')+b'\n')
 				s.sendall(submission.code.encode('utf-8') + (b'' if submission.code.endswith('\n') else b'\n'))
 				s.sendall(secret)
 				results = json.loads(f.readline())
