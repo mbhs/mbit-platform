@@ -19,7 +19,7 @@
 				</p>
 				<ul class="menu-list">
 					<li><a @click="navigate('announcements', null)" :class="{ 'is-active': panel === 'announcements' }">Announcements <div class="badge" v-if="unread > 0">[[ unread ]]</div></a></li>
-					<li><a @click="navigate('leaderboard', null)" :class="{ 'is-active': panel === 'leaderboard' }" v-if="problems.length">Leaderboard</a></li>
+					<li><a @click="navigate('leaderboard', null)" :class="{ 'is-active': panel === 'leaderboard' }">Leaderboard</a></li>
 					<li><a @click="navigate('profile', null)" :class="{ 'is-active': panel === 'profile' }">Profile</a></li>
 				</ul>
 				<p class="menu-label" v-if="problems.length">
