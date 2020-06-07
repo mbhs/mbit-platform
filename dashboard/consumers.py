@@ -12,6 +12,7 @@ from .tasks import grade
 
 from datetime import datetime, timedelta
 import json
+import logging
 
 class DashboardConsumer(JsonWebsocketConsumer):
 	def connect(self):
@@ -22,7 +23,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 		self.send_json({'type': 'divisions', 'divisions': list(Division.objects.all().values('id', 'name'))})
 		if hasattr(self.scope['user'], 'profile'):
 			self.division = self.scope['user'].profile.division
-			self.problems = Problem.objects.filter(round__division=self.division, round__start__lte=datetime.now(), round__end__gte=datetime.now())
+			self.problems = Problem.objects.filter(rounds__division=self.division, rounds__start__lte=datetime.now(), rounds__end__gte=datetime.now())
 			self.send_profile()
 		else:
 			self.send_json({'type': 'no_profile'})
@@ -83,7 +84,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 		for problem in problems:
 			temp = model_to_dict(problem, fields=('name', 'slug'))
 			temp['submissions'] = list(map(lambda s: {'team': s['user__username'], 'filename': s['filename'], 'time': int(s['timestamp'].timestamp()*1000)}, problem.submission_set.all().values('timestamp', 'filename', 'user__username')))
-			temp['test_cases'] = list(map(lambda t: {'preliminary': t['preliminary'], 'num': t['num'], 'group': t['group__name']}, problem.testcase_set.all().values('preliminary', 'num', 'group__name')))
+			temp['test_cases'] = list(map(lambda t: {'preliminary': t['preliminary'], 'num': t['num'], 'group': t['group__name']}, problem.test_case_group.testcase_set.all().values('preliminary', 'num', 'group__name'))) if problem.test_case_group else []
 			problem_list.append(temp)
 		self.send_json({
 			'type': 'admin_problems',
@@ -118,7 +119,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 				self.send_json({'type': 'error', 'message': 'team_name_conflict'})
 				return
 			self.division = self.scope['user'].profile.division
-			self.problems = Problem.objects.filter(round__division=self.division, round__start__lte=datetime.now(), round__end__gte=datetime.now())
+			self.problems = Problem.objects.filter(rounds__division=self.division, rounds__start__lte=datetime.now(), rounds__end__gte=datetime.now())
 			self.send_profile()
 		elif content['type'] == 'get_problems':
 			self.send_json({
@@ -129,7 +130,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 			try: problem_obj = self.problems.get(slug=content['slug'])
 			except ObjectDoesNotExist: return
 			problem = model_to_dict(problem_obj, fields=['name', 'slug'])
-			testcasecount = problem_obj.testcase_set.filter(preliminary=True).aggregate(tests=Count("id"))["tests"]
+			testcasecount = problem_obj.test_case_group.testcase_set.filter(preliminary=True).aggregate(tests=Count("id"))["tests"] if problem_obj.test_case_group else 0
 			results = problem_obj.submission_set.filter(user=self.scope['user']).order_by('-timestamp')
 			problem['results'] = []
 			for resultobj in results:
@@ -166,7 +167,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 					'id': submission.id,
 					'filename': submission.filename,
 					'url': '/submission/'+str(submission.id)+'/'+submission.filename,
-					'tests': problem_obj.testcase_set.filter(preliminary=True).aggregate(tests=Count("id"))["tests"],
+					'tests': problem_obj.test_case_group.testcase_set.filter(preliminary=True).aggregate(tests=Count("id"))["tests"] if problem_obj.test_case_group else 0,
 					'time': int(submission.timestamp.timestamp()*1000)
 				}
 			})
@@ -190,10 +191,11 @@ class DashboardConsumer(JsonWebsocketConsumer):
 				self.send_admin_problems()
 			elif content['type'] == 'create_problem':
 				try:
-					newProblem = Problem(name=content['problem']['name'], slug=content['problem']['slug'], python_time=float(content['problem']['python_time']), java_time=float(content['problem']['java_time']), cpp_time=float(content['problem']['cpp_time']), round=Round.objects.get(id=content['problem']['round']))
+					newProblem = Problem(name=content['problem']['name'], slug=content['problem']['slug'], python_time=float(content['problem']['python_time']), java_time=float(content['problem']['java_time']), cpp_time=float(content['problem']['cpp_time']))
 					newProblem.save()
+					newProblem.rounds.add(Round.objects.get(id=content['problem']['round']))
 					self.send_admin_problems()
-				except Exception as e: print(e)
+				except Exception as e: logging.exception('Create problem failed')
 			elif content['type'] == 'admin_teams':
 				self.send_admin_teams()
 			elif content['type'] == 'create_team':
@@ -202,7 +204,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 					profile = Profile(division=Division.objects.get(id=content['team']['division']), user=newTeam, name=content['team']['name'])
 					profile.save()
 					self.send_admin_teams()
-				except Exception as e: print(e)
+				except Exception as e: logging.exception('Create team failed')
 			elif content['type'] == 'admin_result' and content.get('problem') and content.get('team'):
 				team = get_user_model().objects.get(profile__name=content['team'])
 				problem = Problem.objects.get(slug=content['problem'])
@@ -215,9 +217,9 @@ class DashboardConsumer(JsonWebsocketConsumer):
 				})
 			elif content['type'] == 'set_test_cases' and content['problem'] and content['group']:
 				try:
-					print(content)
 					problem_obj = Problem.objects.get(slug=content['problem'])
-					problem_obj.testcase_set.set(TestCaseGroup.objects.get(name=content['group']).testcase_set.all())
+					problem_obj.test_case_group = TestCaseGroup.objects.get(name=content['group'])
+					problem_obj.save()
 				except ObjectDoesNotExist: return
 			elif content['type'] == 'announce' and content['title'] and content['content']:
 				announcement = Announcement(title=content['title'], content=content['content'])

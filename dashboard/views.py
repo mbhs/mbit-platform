@@ -37,12 +37,14 @@ def scores(request):
 	scores = {}
 	if request.user.is_staff:
 		for user in get_user_model().objects.all():
-			scores[user.profile.name] = 0
+			try: scores[user.profile.name] = 0
+			except ObjectDoesNotExist: continue
 			out += "="*10 + " " + user.profile.name + " " + "="*10 + "\n"
-			for problem in user.submission_set.order_by('problem__name', '-timestamp').exclude(problem__name='Fill The Cups').distinct('problem__name').prefetch_related('testcaseresult_set'):
-				grade = problem.testcaseresult_set.filter(test_case__preliminary=False).filter(result='correct').count()
-				out += problem.problem.name + " " + str(grade) + "\n"
-				scores[user.profile.name] += grade
+			for round in user.profile.division.round_set.all():
+				for problem in round.problem_set.all():
+					grade = problem.submission_set.filter(user=user).order_by('-timestamp').first().testcaseresult_set.filter(test_case__preliminary=False).filter(result='correct').count()
+					out += problem.name + " " + str(grade) + "\n"
+					scores[user.profile.name] += grade
 		out += "\n" + json.dumps(scores)
 		return HttpResponse(out, content_type="text/plain")
 	else:
