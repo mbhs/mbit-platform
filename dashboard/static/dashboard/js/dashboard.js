@@ -206,7 +206,7 @@ var problemPanel = new Vue({
 			reader.readAsText(file)
 		},
 		submit () {
-			if (this.submission.content && !this.submission.filename) this.submission.filename = 'submission.'+{"python": "py", "c++": "cpp", "java": "java"}[this.submission.language]
+			if (this.submission.content && !this.submission.filename) this.submission.filename = 'submission.'+{"python": "py", "pypy": "py", "c++": "cpp", "java": "java"}[this.submission.language]
 			ws.send(JSON.stringify({'type': 'submit', 'submission': this.submission, 'problem': this.problem.slug}))
 			this.$refs.fileInput.value = null
 			this.submission.filename = ''
