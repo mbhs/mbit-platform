@@ -318,6 +318,7 @@ function connect () {
 			profilePanel.unsavedChanges = false
 			profilePanel.changed = false
 			profilePanel.nameConflict = false
+			data.profile.members = Object.assign({}, profilePanel.profile.members, data.profile.members)
 			profilePanel.profile = Object.assign({}, profilePanel.profile, data.profile)
 			ws.send(JSON.stringify({'type': 'get_problems'}))
 		}
