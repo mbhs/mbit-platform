@@ -58,7 +58,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 		if not profile['eligible']:
 			profile['eligible'] = {'incomplete': len(profile['members']) == 0, 'ineligible': False}
 			for member in profile['members']:
-				if len(member['name']) == 0 or len(member['school']) == 0 or len(member['email']) == 0 or member['grade'] == None: profile['eligible']['incomplete'] = True
+				if len(member['name']) == 0 or len(member['school']) == 0 and member['grade'] < 13 or len(member['email']) == 0 or member['grade'] == None: profile['eligible']['incomplete'] = True
 				if member['grade'] == 13 and Division.objects.get(id=profile['division']).name == 'Standard': profile['eligible']['ineligible'] = True
 		if len(profile['members']) < 4: profile['members'] += [{'name': '', 'email': '', 'grade': None} for i in range(4 - len(profile['members']))]
 		self.send_json({
@@ -99,17 +99,17 @@ class DashboardConsumer(JsonWebsocketConsumer):
 				cleaned = []
 				for member in content['members']:
 					if type(member.get('name')) is not str or type(member.get('school')) is not str or type(member.get('email')) is not str or not ('grade' in member and member['grade'] == None or type(member.get('grade')) is int and 5 <= member['grade'] <= 13): return
-					if len(member['name']) == 0 or len(member['school']) == 0 or len(member['email']) == 0 or member['grade'] == None or member['grade'] == 13 and Division.objects.get(id=content['division']).name == 'Standard': eligible = False
+					if len(member['name']) == 0 or len(member['school']) == 0 and member['grade'] < 13 or len(member['email']) == 0 or member['grade'] == None or member['grade'] == 13 and Division.objects.get(id=content['division']).name == 'Standard': eligible = False
 					cleaned.append({'name': member.get('name'), 'school': member.get('school'), 'email': member.get('email'), 'grade': member.get('grade')})
 			except json.JSONDecodeError:
 				return
 			try:
 				if not hasattr(self.scope['user'], 'profile'):
-					profile = Profile(division=Division.objects.get(id=content['division']), user=self.scope['user'], name=content['name'], members=json.dumps(cleaned), eligible=eligible)
+					profile = Profile(division=Division.objects.get(id=content['division']), user=self.scope['user'], name=content['name'][:64], members=json.dumps(cleaned), eligible=eligible)
 					profile.save()
 				else:
 					self.scope['user'].profile.division = Division.objects.get(id=content['division'])
-					self.scope['user'].profile.name = content['name']
+					self.scope['user'].profile.name = content['name'][:64]
 					self.scope['user'].profile.members = json.dumps(cleaned)
 					self.scope['user'].profile.eligible = eligible
 					self.scope['user'].profile.save()

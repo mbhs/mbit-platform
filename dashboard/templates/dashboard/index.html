@@ -105,7 +105,7 @@
 						</div>
 						<div class="field is-grouped">
 							<div class="control is-expanded">
-								<input class="input" type="text" placeholder="School" v-model="profile.members[i].school" @blur="blurred">
+								<input maxlength="64" class="input" type="text" placeholder="School (if applicable)" v-model="profile.members[i].school" @blur="blurred">
 							</div>
 							<div class="control">
 								<div class="select"><select v-model="profile.members[i].grade" @change="unsavedChanges = true">
