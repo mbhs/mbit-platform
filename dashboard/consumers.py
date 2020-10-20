@@ -59,7 +59,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 			profile['eligible'] = {'incomplete': len(profile['members']) == 0, 'ineligible': False}
 			for member in profile['members']:
 				if len(member['name']) == 0 or len(member['school']) == 0 or len(member['email']) == 0 or member['grade'] == None: profile['eligible']['incomplete'] = True
-				if member['grade'] == 13: profile['eligible']['ineligible'] = True
+				if member['grade'] == 13 and Division.objects.get(id=profile['division']).name == 'Standard': profile['eligible']['ineligible'] = True
 		if len(profile['members']) < 4: profile['members'] += [{'name': '', 'email': '', 'grade': None} for i in range(4 - len(profile['members']))]
 		self.send_json({
 			'type': 'profile',
