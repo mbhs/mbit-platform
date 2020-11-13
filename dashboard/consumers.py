@@ -204,8 +204,8 @@ class DashboardConsumer(JsonWebsocketConsumer):
 						if not problem.submission_set.filter(user=profile.user).exists():
 							team['problems'][problem.name] = 'X'
 							continue
-						if self.scope['user'].is_staff or round.end < timezone.now(): score = problem.submission_set.filter(user=profile.user).order_by('-timestamp').first().testcaseresult_set.filter(test_case__preliminary=False).filter(result='correct').count()
-						else: score = problem.submission_set.filter(user=profile.user).order_by('-timestamp').first().testcaseresult_set.filter(test_case__preliminary=True).filter(result='correct').count()
+						preliminary = not self.scope['user'].is_staff and round.end >= timezone.now()
+						score = problem.submission_set.filter(user=profile.user).order_by('-timestamp').first().testcaseresult_set.filter(test_case__preliminary=preliminary).filter(result='correct').count()
 						if score == 40: score += 20
 						team['problems'][problem.name] = score
 						team['total'] += score
