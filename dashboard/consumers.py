@@ -11,7 +11,7 @@ from django.utils import timezone
 from django.contrib.auth import get_user_model
 from .tasks import grade
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 import json
 import logging
 
@@ -24,7 +24,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 		self.send_json({'type': 'divisions', 'divisions': list(Division.objects.all().values('id', 'name'))})
 		if hasattr(self.scope['user'], 'profile'):
 			self.division = self.scope['user'].profile.division
-			self.problems = Problem.objects.filter(rounds__division=self.division, rounds__start__lte=datetime.now(), rounds__end__gte=datetime.now())
+			self.problems = Problem.objects.filter(rounds__division=self.division, rounds__start__lte=timezone.now(), rounds__end__gte=timezone.now())
 			self.send_profile()
 		else:
 			self.send_json({'type': 'no_profile'})
@@ -120,7 +120,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 				self.send_json({'type': 'error', 'message': 'team_name_conflict'})
 				return
 			self.division = self.scope['user'].profile.division
-			self.problems = Problem.objects.filter(rounds__division=self.division, rounds__start__lte=datetime.now(), rounds__end__gte=datetime.now())
+			self.problems = Problem.objects.filter(rounds__division=self.division, rounds__start__lte=timezone.now(), rounds__end__gte=timezone.now())
 			self.send_profile()
 		elif content['type'] == 'get_problems':
 			self.send_json({
@@ -155,12 +155,12 @@ class DashboardConsumer(JsonWebsocketConsumer):
 			if len(content['submission']['content']) >  1000000:
 				self.send_json({'type': 'error', 'message': 'Submission too large.'})
 				return
-			if len(self.scope['user'].submission_set.filter(timestamp__gte=datetime.now()-timedelta(minutes=5))) >= 20:
+			if len(self.scope['user'].submission_set.filter(timestamp__gte=timezone.now()-timedelta(minutes=5))) >= 20:
 				self.send_json({'type': 'error', 'message': 'Too many submissions! Try again in 5 minutes.'})
 				return
 			try: problem_obj = self.problems.get(slug=content['problem'])
 			except ObjectDoesNotExist: return
-			if not problem_obj.rounds.filter(start__lte=datetime.now(), end__gte=datetime.now()).exists(): return
+			if not problem_obj.rounds.filter(start__lte=timezone.now(), end__gte=timezone.now()).exists(): return
 			submission = Submission(code=content['submission']['content'].replace('\x00', ''), filename=content['submission']['filename'], language=content['submission']['language'], user=self.scope['user'], problem=problem_obj)
 			submission.save()
 			self.send_json({
@@ -193,7 +193,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 			problems = []
 			try: division = Division.objects.get(name=content['division'])
 			except ObjectDoesNotExist: return
-			rounds = division.round_set.filter(start__lte=datetime.now()).prefetch_related('problems__submissions')
+			rounds = division.round_set.filter(start__lte=timezone.now()).prefetch_related('problems__submissions')
 			for profile in division.profile_set.all():
 				team = {'total': 0, 'problems': {}}
 				team['name'] = profile.name
