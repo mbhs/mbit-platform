@@ -193,7 +193,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 			problems = []
 			try: division = Division.objects.get(name=content['division'])
 			except ObjectDoesNotExist: return
-			rounds = division.round_set.filter(start__lte=timezone.now()).prefetch_related(Prefetch('problem_set__submission_set', queryset=Submission.objects.order_by('-timestamp')), Prefetch('problem_set__submission_set__testcaseresult_set', quryset=TestCaseResult.objects.filter(result='correct')), 'problem_set__submission_set__testcaseresult_set__test_case')
+			rounds = division.round_set.filter(start__lte=timezone.now()).prefetch_related(Prefetch('problem_set__submission_set', queryset=Submission.objects.order_by('-timestamp')), Prefetch('problem_set__submission_set__testcaseresult_set', queryset=TestCaseResult.objects.filter(result='correct')), 'problem_set__submission_set__testcaseresult_set__test_case')
 			for profile in division.profile_set.all():
 				team = {'total': 0, 'problems': {}}
 				team['name'] = profile.name
