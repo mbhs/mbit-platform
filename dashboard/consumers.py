@@ -80,7 +80,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 		})
 
 	def send_admin_problems(self, event=None):
-		problems = Problem.objects.all().prefetch_related('submissions', 'test_case_group__testcases')
+		problems = Problem.objects.all().prefetch_related('submission_set', 'test_case_group__testcase_set')
 		problem_list = []
 		for problem in problems:
 			temp = model_to_dict(problem, fields=('name', 'slug'))
@@ -132,7 +132,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 			except ObjectDoesNotExist: return
 			problem = model_to_dict(problem_obj, fields=['name', 'slug'])
 			testcasecount = problem_obj.test_case_group.testcase_set.filter(preliminary=True).aggregate(tests=Count("id"))["tests"] if problem_obj.test_case_group else 0
-			results = problem_obj.submission_set.filter(user=self.scope['user']).order_by('-timestamp').prefetch_related(Prefetch('testcaseresults', to_attr='preliminary_results', queryset=TestCaseResult.objects.filter(test_case__preliminary=True).order_by('test_case__num')))
+			results = problem_obj.submission_set.filter(user=self.scope['user']).order_by('-timestamp').prefetch_related(Prefetch('testcaseresult_set', to_attr='preliminary_results', queryset=TestCaseResult.objects.filter(test_case__preliminary=True).order_by('test_case__num')))
 			problem['results'] = []
 			for resultobj in results:
 				result = {'id': resultobj.id, 'filename': resultobj.filename, 'tests': testcasecount, 'time': int(resultobj.timestamp.timestamp()*1000), 'url': '/submission/'+str(resultobj.id)+'/'+resultobj.filename}
@@ -193,7 +193,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 			problems = []
 			try: division = Division.objects.get(name=content['division'])
 			except ObjectDoesNotExist: return
-			rounds = division.round_set.filter(start__lte=timezone.now()).prefetch_related('problems__submissions')
+			rounds = division.round_set.filter(start__lte=timezone.now()).prefetch_related('problem_set__submission_set')
 			for profile in division.profile_set.all():
 				team = {'total': 0, 'problems': {}}
 				team['name'] = profile.name
