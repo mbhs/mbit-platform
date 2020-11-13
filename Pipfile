@@ -12,10 +12,14 @@ gunicorn = "*"
 requests = "*"
 channels-redis = "*"
 celery = {extras = ["redis"],version = "*"}
-daphne = "*"
 msgpack = "*"
 flower = "*"
 future = "*"
+uvicorn = "*"
+uvloop = "*"
+httptools = "*"
+websockets = "*"
+psycopg2 = "*"
 
 [requires]
 python_version = "3.6"

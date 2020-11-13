@@ -91,8 +91,11 @@ CHANNEL_LAYERS = {
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'dbmbit',
+        'USER': 'mbit',
+        'PASSWORD': os.environ.get('DBPASS'),
+        'HOST': 'ls-b817cbea7757796b81e256978493d866dbeb6e78.cdkw74gyioah.us-east-1.rds.amazonaws.com',
     }
 }
 

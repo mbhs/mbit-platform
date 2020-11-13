@@ -21,8 +21,6 @@ SERVER = 'localhost' if os.getenv('DEBUG') else '34.237.145.130'
 @shared_task(max_retries=5, default_retry_delay=20)
 def grade(event):
 	try:
-		cache = redis.Redis()
-		server = None
 		problem_obj = Problem.objects.get(slug=event['problem'])
 		submission = Submission.objects.get(id=event['submission'])
 		with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:

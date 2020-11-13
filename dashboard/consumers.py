@@ -6,7 +6,7 @@ from asgiref.sync import async_to_sync
 from channels.auth import get_user
 from .models import Problem, Submission, TestCaseGroup, TestCaseResult, Announcement, Division, Profile, Round
 from django.db import IntegrityError
-from django.db.models import Count, F
+from django.db.models import Count, F, Prefetch
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 from .tasks import grade
@@ -80,7 +80,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 		})
 
 	def send_admin_problems(self, event=None):
-		problems = Problem.objects.all()
+		problems = Problem.objects.all().prefetch_related('submissions', 'test_case_group__testcases')
 		problem_list = []
 		for problem in problems:
 			temp = model_to_dict(problem, fields=('name', 'slug'))
@@ -132,11 +132,11 @@ class DashboardConsumer(JsonWebsocketConsumer):
 			except ObjectDoesNotExist: return
 			problem = model_to_dict(problem_obj, fields=['name', 'slug'])
 			testcasecount = problem_obj.test_case_group.testcase_set.filter(preliminary=True).aggregate(tests=Count("id"))["tests"] if problem_obj.test_case_group else 0
-			results = problem_obj.submission_set.filter(user=self.scope['user']).order_by('-timestamp')
+			results = problem_obj.submission_set.filter(user=self.scope['user']).order_by('-timestamp').prefetch_related(Prefetch('testcaseresults', to_attr='preliminary_results', queryset=TestCaseResult.objects.filter(test_case__preliminary=True).order_by('test_case__num')))
 			problem['results'] = []
 			for resultobj in results:
 				result = {'id': resultobj.id, 'filename': resultobj.filename, 'tests': testcasecount, 'time': int(resultobj.timestamp.timestamp()*1000), 'url': '/submission/'+str(resultobj.id)+'/'+resultobj.filename}
-				caseresults = resultobj.testcaseresult_set.filter(test_case__preliminary=True).order_by('test_case__num')
+				caseresults = resultobj.preliminary_results
 				if len(caseresults):
 					result['tests'] = list(caseresults.values('id', 'result', num=F('test_case__num')))
 				problem['results'].append(result)
@@ -193,11 +193,12 @@ class DashboardConsumer(JsonWebsocketConsumer):
 			problems = []
 			try: division = Division.objects.get(name=content['division'])
 			except ObjectDoesNotExist: return
+			rounds = division.round_set.filter(start__lte=datetime.now()).prefetch_related('problems__submissions')
 			for profile in division.profile_set.all():
 				team = {'total': 0, 'problems': {}}
 				team['name'] = profile.name
 				team['eligible'] = profile.eligible
-				for round in division.round_set.filter(start__lte=datetime.now()):
+				for round in rounds:
 					team['division'] = round.division.name
 					for problem in round.problem_set.all():
 						if problem.name not in problems: problems.append(problem.name)
