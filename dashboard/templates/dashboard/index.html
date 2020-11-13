@@ -101,7 +101,7 @@
 							<p>Your team is not eligible for prizes:</p>
 							<ul>
 								<li v-if="profile.eligible.incomplete">Incomplete member information</li>
-								<li v-if="profile.eligible.ineligible">Ineligible members</li>
+								<li v-if="profile.eligible.ineligible">Ineligible members for standard division</li>
 							</ul>
 						</div>
 					</article>
@@ -114,7 +114,7 @@
 					<label class="label">Team</label>
 					<div class="field is-grouped" :class="{'name-conflict': nameConflict}">
 						<div class="control is-expanded">
-							<input class="input" type="text" placeholder="Name" required v-model="profile.name" @blur="blurred">
+							<input maxlength="64" class="input" type="text" placeholder="Name" required v-model="profile.name" @blur="blurred">
 						</div>
 						<div class="control">
 							<div class="select"><select required v-model="profile.division" @change="unsavedChanges = true">
@@ -152,7 +152,7 @@
 									<option value="10">10th grade</option>
 									<option value="11">11th grade</option>
 									<option value="12">12th grade</option>
-									<option value="13">Ineligible</option>
+									<option value="13">College or beyond</option>
 								</select></div>
 							</div>
 						</div>

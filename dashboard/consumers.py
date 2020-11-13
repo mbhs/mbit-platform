@@ -60,8 +60,8 @@ class DashboardConsumer(JsonWebsocketConsumer):
 		if not profile['eligible']:
 			profile['eligible'] = {'incomplete': len(profile['members']) == 0, 'ineligible': False}
 			for member in profile['members']:
-				if len(member['name']) == 0 or len(member['school']) == 0 or len(member['email']) == 0 or member['grade'] == None: profile['eligible']['incomplete'] = True
-				if member['grade'] == 13: profile['eligible']['ineligible'] = True
+				if len(member['name']) == 0 or len(member['email']) == 0 or member['grade'] == None or len(member['school']) == 0 and member['grade'] < 13: profile['eligible']['incomplete'] = True
+				if member['grade'] == 13 and Division.objects.get(id=profile['division']).name == 'Standard': profile['eligible']['ineligible'] = True
 		if len(profile['members']) < 4: profile['members'] += [{'name': '', 'email': '', 'school': '', 'grade': None} for i in range(4 - len(profile['members']))]
 		self.send_json({
 			'type': 'profile',
@@ -101,7 +101,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 				cleaned = []
 				for member in content['members']:
 					if type(member.get('name')) is not str or type(member.get('school')) is not str or type(member.get('email')) is not str or not ('grade' in member and member['grade'] == None or type(member.get('grade')) is int and 5 <= member['grade'] <= 13): return
-					if len(member['name']) == 0 or len(member['school']) == 0 or len(member['email']) == 0 or member['grade'] == None or member['grade'] == 13: eligible = False
+					if len(member['name']) == 0 or len(member['email']) == 0 or member['grade'] == None or len(member['school']) == 0 and member['grade'] < 13 or member['grade'] == 13 and Division.objects.get(id=content['division']).name == 'Standard': eligible = False
 					cleaned.append({'name': member.get('name'), 'school': member.get('school'), 'email': member.get('email'), 'grade': member.get('grade')})
 			except json.JSONDecodeError:
 				return

@@ -340,7 +340,10 @@ function connect () {
 			profilePanel.unsavedChanges = false
 			profilePanel.changed = false
 			profilePanel.nameConflict = false
-			profilePanel.profile = data.profile
+			for (let i = 0; i < 4; i++) {
+				data.profile.members[i] = Object.assign({}, profilePanel.profile.members[i], data.profile.members[i])
+			}
+			profilePanel.profile = Object.assign({}, profilePanel.profile, data.profile)
 			ws.send(JSON.stringify({'type': 'get_problems'}))
 		}
 		else if (data.type === 'divisions') {
