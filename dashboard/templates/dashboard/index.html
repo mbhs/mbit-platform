@@ -48,9 +48,9 @@
 				</div>
 			</div>
 			<div class="column panel" id="leaderboard-panel" v-show="state.panel === 'leaderboard'" v-cloak>
-				<!--<div class="notification is-primary">
+				<div class="notification is-primary">
 					This leaderboard is based on the results of pretests. <strong>It is not indicative of actual rankings.</strong>
-				</div>-->
+				</div>
 				<div class="field">
 					<label class="label">Division</label>
 					<div class="select"><select required v-model="division">
@@ -190,7 +190,7 @@
 				<button @click="submit" class="button is-primary">Submit</button><br><br>
 				<div class="results">
 					<h3 class="is-4 subtitle">Results</h3><span class="file-download" v-if="result !== null &amp;&amp; results.length > result"><a target="_blank" :href="results[result].url"><i class="fas fa-file-download"></i> [[ results[result].filename ]]</a><span v-if="result"> (old)</span></span>
-					<p>The results on this page are not indicative of the test cases used for rankings. They represent the bounds of the problem, but do not guarantee correctness for all possible inputs. <strong>Only your most recent submission will be used for grading.</strong></p>
+					<p>The results on this page are not indicative of the test cases used for rankings. They may assist in the development of your solution, but they do not guarantee correctness for all possible inputs. <strong>Only your most recent submission will be used for grading.</strong></p>
 					<p v-if="results.length === 0"><em>No submissions yet.</em></p>
 					<div class="select" v-if="results.length > 0">
 						<select v-model="result">
@@ -209,10 +209,11 @@
 					</div>
 					<div class="code-description notification" v-if="testInfo !== null &amp;&amp; results[result].tests[testInfo].result in descriptions">
 						<button class="delete" @click="testInfo = null"></button>
-						<strong>[[ descriptions[results[result].tests[testInfo].result].name ]].</strong> [[ descriptions[results[result].tests[testInfo].result].body ]]
+						<strong>[[ descriptions[results[result].tests[testInfo].result].name ]].</strong> [[ descriptions[results[result].tests[testInfo].result].body ]]<br>
+						Runtime: [[ Math.round(results[result].tests[testInfo].runtime*1000)/1000 ]] seconds ([[ results[result].timelimit ]] [[ results[result].timelimit === 1 ? 'second' : 'seconds' ]] limit)
 						<p v-show="results[result].tests[testInfo].stdin">Input<a v-show="inputDownload" class="input-download" :href="inputDownload" style="float: right" :download="problem.slug+'_'+results[result].tests[testInfo].num+'.txt'"><i class="fas fa-file-download"></i> Download</a></p>
 						<pre v-show="results[result].tests[testInfo].stdin">[[ results[result].tests[testInfo].stdin ]]</pre>
-						<p v-show="results[result].tests[testInfo].stdout">Output</p>
+						<p v-show="results[result].tests[testInfo].stdout">Your program's output</p>
 						<pre v-show="results[result].tests[testInfo].stdout">[[ results[result].tests[testInfo].stdout ]]</pre>
 						<p v-show="results[result].tests[testInfo].stderr">Error</p>
 						<pre v-show="results[result].tests[testInfo].stderr">[[ results[result].tests[testInfo].stderr ]]</pre>

@@ -39,7 +39,7 @@ def grade(event):
 			s.sendall(submission.code.encode('utf-8') + (b'' if submission.code.endswith('\n') else b'\n'))
 			s.sendall(secret)
 			results = json.loads(f.readline())
-	TestCaseResult.objects.bulk_create(TestCaseResult(submission=submission, test_case=problem_obj.test_case_group.testcase_set.filter(preliminary=event['preliminary'], num=result['test_case']).get(), result=result['status'], stdout=result['stdout'], stderr=result['stderr']) for result in results)
+	TestCaseResult.objects.bulk_create(TestCaseResult(submission=submission, test_case=problem_obj.test_case_group.testcase_set.filter(preliminary=event['preliminary'], num=result['test_case']).get(), result=result['status'], runtime=result['runtime'], stdout=result['stdout'], stderr=result['stderr']) for result in results)
 	from channels.layers import get_channel_layer
 	channel_layer = get_channel_layer()
 	if event['preliminary']:
@@ -71,7 +71,7 @@ def get_leaderboard(event):
 				if problem.name not in problems: problems.append(problem.name)
 				for submission in problem.submission_set.all():
 					if submission.user == profile.user:
-						preliminary = False #not self.scope['user'].is_staff and round.end >= timezone.now()
+						preliminary = not self.scope['user'].is_staff and round.end >= timezone.now()
 						score = sum(1 for test in submission.testcaseresult_set.all() if test.test_case.preliminary == preliminary)
 						if score == 40: score += 20
 						team['problems'][problem.name] = score
@@ -91,7 +91,7 @@ def get_problem(event):
 	results = problem_obj.submission_set.filter(user__id=event['user']).order_by('-timestamp').prefetch_related(Prefetch('testcaseresult_set', to_attr='preliminary_results', queryset=TestCaseResult.objects.filter(test_case__preliminary=True).order_by('test_case__num').only('id', 'result', 'test_case__num')))
 	problem['results'] = []
 	for resultobj in results:
-		result = {'id': resultobj.id, 'filename': resultobj.filename, 'tests': testcasecount, 'time': int(resultobj.timestamp.timestamp()*1000), 'url': '/submission/'+str(resultobj.id)+'/'+resultobj.filename}
+		result = {'id': resultobj.id, 'filename': resultobj.filename, 'tests': testcasecount, 'time': int(resultobj.timestamp.timestamp()*1000), 'url': '/submission/'+str(resultobj.id)+'/'+resultobj.filename, 'timelimit': getattr(problem_obj, resultobj.language.replace('pypy', 'python').replace('+', 'p')+'_time')}
 		caseresults = resultobj.preliminary_results
 		if len(caseresults):
 			result['tests'] = list(map(lambda r: {'id': r.id, 'result': r.result, 'num': r.test_case.num}, caseresults))

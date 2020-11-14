@@ -52,6 +52,7 @@ class Submission(models.Model):
 class TestCaseResult(models.Model):
 	test_case = models.ForeignKey(TestCase, on_delete=models.CASCADE)
 	result = models.TextField()
+	runtime = models.FloatField()
 	stdout = models.TextField(blank=True, null=True)
 	stderr = models.TextField(blank=True, null=True)
 	submission = models.ForeignKey(Submission, on_delete=models.CASCADE)
