@@ -20,7 +20,7 @@ from django.utils import timezone
 from django.db.models import Prefetch
 from django.core.exceptions import ObjectDoesNotExist
 
-SERVER = 'localhost' if os.getenv('DEBUG') else '34.237.145.130'
+SERVER = os.getenv('GRADER', 'localhost')
 
 @shared_task(autoretry_for=(Exception,), max_retries=5, default_retry_delay=20)
 def grade(event):
