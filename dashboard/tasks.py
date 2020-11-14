@@ -61,11 +61,11 @@ def get_leaderboard(event):
 	except ObjectDoesNotExist: return
 	r = redis.Redis(port=1338)
 	cache = r.get('leaderboard-'+event['division'])
-	if cache:
+	if cache and not event['staff']:
 		teams = json.loads(cache)['teams']
 		problems = json.loads(cache)['problems']
-	elif not r.get('generating-leaderboard-'+event['division']):
-		r.set('generating-leaderboard-'+event['division'], '1')
+	elif not r.get('generating-leaderboard-'+event['division']) or event['staff']:
+		if not event['staff']: r.set('generating-leaderboard-'+event['division'], '1')
 		teams = []
 		problems = []
 		usersubmissions = collections.defaultdict(dict)
@@ -99,8 +99,8 @@ def get_leaderboard(event):
 					team['problems'][problem.name] = score
 					team['total'] += score
 			teams.append(team)
-		r.setex('leaderboard-'+event['division'], 10, json.dumps({'teams': teams, 'problems': problems}))
-		r.delete('generating-leaderboard-'+event['division'])
+		if not event['staff']: r.setex('leaderboard-'+event['division'], 10, json.dumps({'teams': teams, 'problems': problems}))
+		if not event['staff']: r.delete('generating-leaderboard-'+event['division'])
 	else:
 		while True:
 			cache = r.get('leaderboard-'+event['division'])
