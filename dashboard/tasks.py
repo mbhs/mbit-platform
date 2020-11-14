@@ -68,7 +68,7 @@ def get_leaderboard(event):
 		teams = []
 		problems = []
 		usersubmissions = collections.defaultdict(dict)
-		rounds = division.round_set.filter(start__lte=timezone.now()).prefetch_related(Prefetch('problem_set', queryset=Problem.objects.order_by('id'), to_attr='problems'), Prefetch('problems__submission_set', to_attr='submissions', queryset=Submission.objects.order_by('-timestamp')), Prefetch('problems__submissions__testcaseresult_set', to_attr='correctresults', queryset=TestCaseResult.objects.filter(result='correct')), 'problems__submissions__correctresults__test_case', queryset=TestCase.objects.only('preliminary'))
+		rounds = division.round_set.filter(start__lte=timezone.now()).prefetch_related(Prefetch('problem_set', queryset=Problem.objects.order_by('id'), to_attr='problems'), Prefetch('problems__submission_set', to_attr='submissions', queryset=Submission.objects.order_by('-timestamp')), Prefetch('problems__submissions__testcaseresult_set', to_attr='correctresults', queryset=TestCaseResult.objects.filter(result='correct')), Prefetch('problems__submissions__correctresults__test_case', queryset=TestCase.objects.only('preliminary')))
 		for profile in division.profile_set.all():
 			team = {'total': 0, 'problems': {}}
 			team['name'] = profile.name
