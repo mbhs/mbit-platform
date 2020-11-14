@@ -90,7 +90,9 @@ def get_leaderboard(event):
 							usersubmissions[problem.id]['done'] = True
 							team['problems'][problem.name] = 'X'
 							continue
-					else: team['problems'][problem.name] = 'X'
+					else:
+						team['problems'][problem.name] = 'X'
+						continue
 					score = sum(1 for test in usersub.testcaseresult_set.all() if test.test_case.preliminary == preliminary)
 					if score == 40: score += 20
 					team['problems'][problem.name] = score
