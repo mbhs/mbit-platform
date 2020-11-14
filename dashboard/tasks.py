@@ -19,6 +19,7 @@ from .models import Problem, Submission, TestCaseResult, Division
 from django.utils import timezone
 from django.db.models import Prefetch
 from django.core.exceptions import ObjectDoesNotExist
+from django.forms.models import model_to_dict
 
 SERVER = os.getenv('GRADER', 'localhost')
 
