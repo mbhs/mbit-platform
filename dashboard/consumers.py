@@ -147,7 +147,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 				'type': 'problem',
 				'slug': content['slug'],
 				'user': self.scope['user'].id,
-				'user_group': self.user_group
+				'channel': self.channel_name
 			},))
 		elif content['type'] == 'get_test_case' and 'case' in content:
 			result_obj = TestCaseResult.objects.filter(id=content['case'])
@@ -197,7 +197,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 			get_leaderboard.apply_async(args=({
 				'type': 'leaderboard',
 				'division': content['division'],
-				'user_group': self.user_group
+				'channel': self.channel_name
 			},))
 		elif self.scope['user'].is_staff:
 			if content['type'] == 'admin_problems':

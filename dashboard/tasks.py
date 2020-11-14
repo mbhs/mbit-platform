@@ -81,7 +81,7 @@ def get_leaderboard(event):
 		teams.append(team)
 	from channels.layers import get_channel_layer
 	channel_layer = get_channel_layer()
-	async_to_sync(channel_layer.group_send)(event['user_group'], {'type': 'leaderboard', 'teams': teams, 'problems': problems})
+	async_to_sync(channel_layer.send)(event['channel'], {'type': 'leaderboard', 'teams': teams, 'problems': problems})
 
 @shared_task
 def get_problem(event):
@@ -98,4 +98,4 @@ def get_problem(event):
 		problem['results'].append(result)
 	from channels.layers import get_channel_layer
 	channel_layer = get_channel_layer()
-	async_to_sync(channel_layer.group_send)(event['user_group'], {'type': 'problem', 'problem': problem})
+	async_to_sync(channel_layer.send)(event['channel'], {'type': 'problem', 'problem': problem})
