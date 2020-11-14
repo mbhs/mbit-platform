@@ -78,4 +78,6 @@ def get_leaderboard(event):
 						break
 				else: team['problems'][problem.name] = 'X'
 		teams.append(team)
+	from channels.layers import get_channel_layer
+	channel_layer = get_channel_layer()
 	async_to_sync(channel_layer.group_send)(event['user_group'], {'type': 'leaderboard', 'teams': teams, 'problems': problems})
