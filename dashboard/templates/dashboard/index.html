@@ -210,7 +210,7 @@
 					<div class="code-description notification" v-if="testInfo !== null &amp;&amp; results[result].tests[testInfo].result in descriptions">
 						<button class="delete" @click="testInfo = null"></button>
 						<strong>[[ descriptions[results[result].tests[testInfo].result].name ]].</strong> [[ descriptions[results[result].tests[testInfo].result].body ]]<br>
-						Runtime: [[ results[result].tests[testInfo].runtime ? Math.round(results[result].tests[testInfo].runtime*1000)/1000 : 0.000 ]] seconds ([[ results[result].timelimit ]] [[ results[result].timelimit === 1 ? 'second' : 'seconds' ]] limit)
+						Runtime: [[ results[result].tests[testInfo].runtime ? Math.round(results[result].tests[testInfo].runtime*1000)/1000 : 0.000 ]] seconds ([[ results[result].timelimit ]] second limit)
 						<p v-show="results[result].tests[testInfo].stdin">Input<a v-show="inputDownload" class="input-download" :href="inputDownload" style="float: right" :download="problem.slug+'_'+results[result].tests[testInfo].num+'.txt'"><i class="fas fa-file-download"></i> Download</a></p>
 						<pre v-show="results[result].tests[testInfo].stdin">[[ results[result].tests[testInfo].stdin ]]</pre>
 						<p v-show="results[result].tests[testInfo].stdout">Your program's output</p>
