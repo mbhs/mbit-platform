@@ -197,7 +197,8 @@ class DashboardConsumer(JsonWebsocketConsumer):
 			get_leaderboard.apply_async(args=({
 				'type': 'leaderboard',
 				'division': content['division'],
-				'channel': self.channel_name
+				'channel': self.channel_name,
+				'staff': self.scope['user'].is_staff
 			},))
 		elif self.scope['user'].is_staff:
 			if content['type'] == 'admin_problems':

@@ -66,12 +66,12 @@ def get_leaderboard(event):
 		team['name'] = profile.name
 		team['eligible'] = profile.eligible
 		for round in rounds:
+			preliminary = not event['staff'] and round.end >= timezone.now()
 			team['division'] = round.division.name
 			for problem in round.problem_set.all():
 				if problem.name not in problems: problems.append(problem.name)
 				for submission in problem.submission_set.all():
 					if submission.user == profile.user:
-						preliminary = not self.scope['user'].is_staff and round.end >= timezone.now()
 						score = sum(1 for test in submission.testcaseresult_set.all() if test.test_case.preliminary == preliminary)
 						if score == 40: score += 20
 						team['problems'][problem.name] = score
