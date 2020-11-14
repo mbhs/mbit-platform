@@ -80,17 +80,21 @@ def get_leaderboard(event):
 					if problem.name not in problems: problems.append(problem.name)
 					if profile.user.id in usersubmissions[problem.id]:
 						usersub = usersubmissions[problem.id][profile.user.id]
-					else:
+					else if not usersubmissions[problem.id].get('done'):
 						for submission in problem.submission_set.all():
 							usersubmissions[problem.id][submission.user.id] = submission
 							if submission.user == profile.user:
 								usersub = submission
 								break
+						else:
+							usersubmissions[problem.id]['done'] = True
+							team['problems'][problem.name] = 'X'
+							continue
+					else: team['problems'][problem.name] = 'X'
 					score = sum(1 for test in usersub.testcaseresult_set.all() if test.test_case.preliminary == preliminary)
 					if score == 40: score += 20
 					team['problems'][problem.name] = score
 					team['total'] += score
-					else: team['problems'][problem.name] = 'X'
 			teams.append(team)
 		r.setex('leaderboard-'+event['division'], 10, json.dumps({'teams': teams, 'problems': problems}))
 	from channels.layers import get_channel_layer
