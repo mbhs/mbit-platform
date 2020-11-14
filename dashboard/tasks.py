@@ -56,29 +56,36 @@ def grade(event):
 
 @shared_task
 def get_leaderboard(event):
-	teams = []
-	problems = []
 	try: division = Division.objects.get(name=event['division'])
 	except ObjectDoesNotExist: return
-	rounds = division.round_set.filter(start__lte=timezone.now()).prefetch_related(Prefetch('problem_set__submission_set', queryset=Submission.objects.order_by('-timestamp')), Prefetch('problem_set__submission_set__testcaseresult_set', queryset=TestCaseResult.objects.filter(result='correct')), 'problem_set__submission_set__testcaseresult_set__test_case')
-	for profile in division.profile_set.all():
-		team = {'total': 0, 'problems': {}}
-		team['name'] = profile.name
-		team['eligible'] = profile.eligible
-		for round in rounds:
-			preliminary = not event['staff'] and round.end >= timezone.now()
-			team['division'] = round.division.name
-			for problem in round.problem_set.all():
-				if problem.name not in problems: problems.append(problem.name)
-				for submission in problem.submission_set.all():
-					if submission.user == profile.user:
-						score = sum(1 for test in submission.testcaseresult_set.all() if test.test_case.preliminary == preliminary)
-						if score == 40: score += 20
-						team['problems'][problem.name] = score
-						team['total'] += score
-						break
-				else: team['problems'][problem.name] = 'X'
-		teams.append(team)
+	r = redis.Redis(port=1338)
+	cache = r.get('leaderboard-'+event['division'])
+	if cache:
+		teams = json.loads(cache)['teams']
+		problems = json.loads(cache)['problems']
+	else:
+		teams = []
+		problems = []
+		rounds = division.round_set.filter(start__lte=timezone.now()).prefetch_related(Prefetch('problem_set__submission_set', queryset=Submission.objects.order_by('-timestamp')), Prefetch('problem_set__submission_set__testcaseresult_set', queryset=TestCaseResult.objects.filter(result='correct')), 'problem_set__submission_set__testcaseresult_set__test_case')
+		for profile in division.profile_set.all():
+			team = {'total': 0, 'problems': {}}
+			team['name'] = profile.name
+			team['eligible'] = profile.eligible
+			for round in rounds:
+				preliminary = not event['staff'] and round.end >= timezone.now()
+				team['division'] = round.division.name
+				for problem in round.problem_set.all():
+					if problem.name not in problems: problems.append(problem.name)
+					for submission in problem.submission_set.all():
+						if submission.user == profile.user:
+							score = sum(1 for test in submission.testcaseresult_set.all() if test.test_case.preliminary == preliminary)
+							if score == 40: score += 20
+							team['problems'][problem.name] = score
+							team['total'] += score
+							break
+					else: team['problems'][problem.name] = 'X'
+			teams.append(team)
+		r.setex('leaderboard-'+event['division'], 10, json.dumps({'teams': teams, 'problems': problems}))
 	from channels.layers import get_channel_layer
 	channel_layer = get_channel_layer()
 	async_to_sync(channel_layer.send)(event['channel'], {'type': 'leaderboard', 'teams': teams, 'problems': problems})
