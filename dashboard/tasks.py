@@ -82,7 +82,7 @@ def get_leaderboard(event):
 						usersub = usersubmissions[problem.id][profile.user.id]
 					elif not usersubmissions[problem.id].get('done'):
 						for submission in problem.submission_set.all():
-							usersubmissions[problem.id][submission.user.id] = submission
+							if submission.user.id not in usersubmissions[problem.id]: usersubmissions[problem.id][submission.user.id] = submission
 							if submission.user == profile.user:
 								usersub = submission
 								break
