@@ -212,7 +212,7 @@
 						<strong>[[ descriptions[results[result].tests[testInfo].result].name ]].</strong> [[ descriptions[results[result].tests[testInfo].result].body ]]<br>
 						Runtime: [[ results[result].tests[testInfo].runtime ? Math.round(results[result].tests[testInfo].runtime*1000)/1000 : 0.000 ]] seconds ([[ results[result].timelimit ]] second limit)
 						<p v-show="results[result].tests[testInfo].stdin">Input<a v-show="inputDownload" class="input-download" :href="inputDownload" style="float: right" :download="problem.slug+'_'+results[result].tests[testInfo].num+'.txt'"><i class="fas fa-file-download"></i> Download</a></p>
-						<pre v-show="results[result].tests[testInfo].stdin">[[ results[result].tests[testInfo].stdin ]]</pre>
+						<pre v-show="results[result].tests[testInfo].stdin">[[ results[result].tests[testInfo].stdin.length > 10000 ? results[result].tests[testInfo].stdin.slice(10000)+'\n&lt;strong&gt;[truncated]&lt;/strong&gt;' ]]</pre>
 						<p v-show="results[result].tests[testInfo].stdout">Your program's output</p>
 						<pre v-show="results[result].tests[testInfo].stdout">[[ results[result].tests[testInfo].stdout ]]</pre>
 						<p v-show="results[result].tests[testInfo].stderr">Error</p>
