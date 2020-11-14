@@ -11,6 +11,7 @@ import json
 import socket
 import logging
 import os
+import collections
 
 from mbit.celery import app
 
@@ -66,6 +67,7 @@ def get_leaderboard(event):
 	else:
 		teams = []
 		problems = []
+		usersubmissions = collections.defaultdict(dict)
 		rounds = division.round_set.filter(start__lte=timezone.now()).prefetch_related(Prefetch('problem_set__submission_set', queryset=Submission.objects.order_by('-timestamp')), Prefetch('problem_set__submission_set__testcaseresult_set', queryset=TestCaseResult.objects.filter(result='correct')), 'problem_set__submission_set__testcaseresult_set__test_case')
 		for profile in division.profile_set.all():
 			team = {'total': 0, 'problems': {}}
@@ -76,13 +78,18 @@ def get_leaderboard(event):
 				team['division'] = round.division.name
 				for problem in round.problem_set.all():
 					if problem.name not in problems: problems.append(problem.name)
-					for submission in problem.submission_set.all():
-						if submission.user == profile.user:
-							score = sum(1 for test in submission.testcaseresult_set.all() if test.test_case.preliminary == preliminary)
-							if score == 40: score += 20
-							team['problems'][problem.name] = score
-							team['total'] += score
-							break
+					if profile.user.id in usersubmissions[problem.id]:
+						usersub = usersubmissions[problem.id][profile.user.id]
+					else:
+						for submission in problem.submission_set.all():
+							usersubmissions[problem.id][submission.user.id] = submission
+							if submission.user == profile.user:
+								usersub = submission
+								break
+					score = sum(1 for test in usersub.testcaseresult_set.all() if test.test_case.preliminary == preliminary)
+					if score == 40: score += 20
+					team['problems'][problem.name] = score
+					team['total'] += score
 					else: team['problems'][problem.name] = 'X'
 			teams.append(team)
 		r.setex('leaderboard-'+event['division'], 10, json.dumps({'teams': teams, 'problems': problems}))
