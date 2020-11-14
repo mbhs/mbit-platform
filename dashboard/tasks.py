@@ -11,6 +11,7 @@ import json
 import socket
 import logging
 import os
+import collections
 
 from mbit.celery import app
 
