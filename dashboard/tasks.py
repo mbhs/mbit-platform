@@ -61,15 +61,14 @@ def get_leaderboard(event):
 	except ObjectDoesNotExist: return
 	r = redis.Redis(port=1338)
 	cache = r.get('leaderboard-'+event['division'])
-	if cache and not event['staff']:
+	if cache:
 		teams = json.loads(cache)['teams']
 		problems = json.loads(cache)['problems']
 	elif not r.get('generating-leaderboard-'+event['division']) or event['staff']:
 		if not event['staff']: r.set('generating-leaderboard-'+event['division'], '1')
 		teams = []
 		problems = []
-		usersubmissions = collections.defaultdict(dict)
-		rounds = division.round_set.filter(start__lte=timezone.now()).prefetch_related(Prefetch('problem_set', queryset=Problem.objects.order_by('id'), to_attr='problems'), Prefetch('problems__submission_set', to_attr='submissions', queryset=Submission.objects.order_by('-timestamp')), Prefetch('problems__submissions__testcaseresult_set', to_attr='correctresults', queryset=TestCaseResult.objects.filter(result='correct')), Prefetch('problems__submissions__correctresults__test_case', queryset=TestCase.objects.only('preliminary')))
+		rounds = division.round_set.filter(start__lte=timezone.now())
 		for profile in division.profile_set.all():
 			team = {'total': 0, 'problems': {}}
 			team['name'] = profile.name
@@ -77,27 +76,16 @@ def get_leaderboard(event):
 			for round in rounds:
 				preliminary = not event['staff'] and round.end >= timezone.now()
 				team['division'] = round.division.name
-				for problem in round.problems:
+				for problem in round.problem_set.all().order_by('id').only('name'):
+					print(profile.name, problem.name)
 					if problem.name not in problems: problems.append(problem.name)
-					if profile.user.id in usersubmissions[problem.id]:
-						usersub = usersubmissions[problem.id][profile.user.id]
-					elif not usersubmissions[problem.id].get('done'):
-						for submission in problem.submissions:
-							if submission.user.id not in usersubmissions[problem.id]: usersubmissions[problem.id][submission.user.id] = submission
-							if submission.user == profile.user:
-								usersub = submission
-								break
-						else:
-							usersubmissions[problem.id]['done'] = True
-							team['problems'][problem.name] = 'X'
-							continue
-					else:
-						team['problems'][problem.name] = 'X'
-						continue
-					score = sum(1 for test in usersub.correctresults if test.test_case.preliminary == preliminary)
-					if score == 40: score += 20
-					team['problems'][problem.name] = score
-					team['total'] += score
+					try:
+						submission = problem.submission_set.filter(user=profile.user).latest('timestamp')
+						score = submission.testcaseresult_set.filter(result='correct', test_case__preliminary=preliminary).count()
+						if score == 40: score += 20
+						team['problems'][problem.name] = score
+						team['total'] += score
+					except ObjectDoesNotExist: team['problems'][problem.name] = 'X'
 			teams.append(team)
 		if not event['staff']: r.setex('leaderboard-'+event['division'], 10, json.dumps({'teams': teams, 'problems': problems}))
 		if not event['staff']: r.delete('generating-leaderboard-'+event['division'])
