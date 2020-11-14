@@ -4,7 +4,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.forms.models import model_to_dict
 from asgiref.sync import async_to_sync
 from channels.auth import get_user
-from .models import Problem, Submission, TestCaseGroup, TestCaseResult, Announcement, Division, Profile, Round
+from .models import Problem, Submission, TestCaseGroup, TestCaseResult, TestCase, Announcement, Division, Profile, Round
 from django.db import IntegrityError
 from django.db.models import Count, F, Prefetch
 from django.utils import timezone
@@ -80,7 +80,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 		})
 
 	def send_admin_problems(self, event=None):
-		problems = Problem.objects.all().prefetch_related('submission_set', 'test_case_group__testcase_set')
+		problems = Problem.objects.all().prefetch_related(Prefetch('submission_set', queryset=Submission.objects.all().only('timestamp', 'filename', 'user__username')), Prefetch('test_case_group__testcase_set', queryset=TestCase.objects.all().only('preliminary', 'num', 'group__name')))
 		problem_list = []
 		for problem in problems:
 			temp = model_to_dict(problem, fields=('name', 'slug'))
