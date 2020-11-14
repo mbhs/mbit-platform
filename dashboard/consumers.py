@@ -209,6 +209,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 								if score == 40: score += 20
 								team['problems'][problem.name] = score
 								team['total'] += score
+								break
 						else: team['problems'][problem.name] = 'X'
 				teams.append(team)
 			self.send_json({'type': 'leaderboard', 'teams': teams, 'problems': problems})
