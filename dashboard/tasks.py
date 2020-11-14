@@ -81,3 +81,19 @@ def get_leaderboard(event):
 	from channels.layers import get_channel_layer
 	channel_layer = get_channel_layer()
 	async_to_sync(channel_layer.group_send)(event['user_group'], {'type': 'leaderboard', 'teams': teams, 'problems': problems})
+
+@shared_task
+def get_problem(event):
+	problem = model_to_dict(problem_obj, fields=['name', 'slug'])
+	testcasecount = problem_obj.test_case_group.testcase_set.filter(preliminary=True).aggregate(tests=Count("id"))["tests"] if problem_obj.test_case_group else 0
+	results = problem_obj.submission_set.filter(user__id=event['user']).order_by('-timestamp').prefetch_related(Prefetch('testcaseresult_set', to_attr='preliminary_results', queryset=TestCaseResult.objects.filter(test_case__preliminary=True).order_by('test_case__num')))
+	problem['results'] = []
+	for resultobj in results:
+		result = {'id': resultobj.id, 'filename': resultobj.filename, 'tests': testcasecount, 'time': int(resultobj.timestamp.timestamp()*1000), 'url': '/submission/'+str(resultobj.id)+'/'+resultobj.filename}
+		caseresults = resultobj.preliminary_results
+		if len(caseresults):
+			result['tests'] = list(map(lambda r: {'id': r.id, 'result': r.result, 'num': r.test_case.num}, caseresults))
+		problem['results'].append(result)
+	from channels.layers import get_channel_layer
+	channel_layer = get_channel_layer()
+	async_to_sync(channel_layer.group_send)(event['user_group'], {'type': 'problem', 'problem': problem})

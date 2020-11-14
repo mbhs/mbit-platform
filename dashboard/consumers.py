@@ -9,7 +9,7 @@ from django.db import IntegrityError
 from django.db.models import Count, F, Prefetch
 from django.utils import timezone
 from django.contrib.auth import get_user_model
-from .tasks import grade, get_leaderboard
+from .tasks import grade, get_leaderboard, get_problem
 
 from datetime import timedelta
 import json
@@ -52,6 +52,12 @@ class DashboardConsumer(JsonWebsocketConsumer):
 			'type': 'leaderboard',
 			'teams': event['teams'],
 			'problems': event['problems']
+		})
+
+	def problem(self, event):
+		self.send_json({
+			'type': 'problem',
+			'problem': event['problem']
 		})
 
 	def send_announcements(self, event=None):
@@ -137,20 +143,12 @@ class DashboardConsumer(JsonWebsocketConsumer):
 		elif content['type'] == 'get_problem' and 'slug' in content:
 			try: problem_obj = self.problems.get(slug=content['slug'])
 			except ObjectDoesNotExist: return
-			problem = model_to_dict(problem_obj, fields=['name', 'slug'])
-			testcasecount = problem_obj.test_case_group.testcase_set.filter(preliminary=True).aggregate(tests=Count("id"))["tests"] if problem_obj.test_case_group else 0
-			results = problem_obj.submission_set.filter(user=self.scope['user']).order_by('-timestamp').prefetch_related(Prefetch('testcaseresult_set', to_attr='preliminary_results', queryset=TestCaseResult.objects.filter(test_case__preliminary=True).order_by('test_case__num')))
-			problem['results'] = []
-			for resultobj in results:
-				result = {'id': resultobj.id, 'filename': resultobj.filename, 'tests': testcasecount, 'time': int(resultobj.timestamp.timestamp()*1000), 'url': '/submission/'+str(resultobj.id)+'/'+resultobj.filename}
-				caseresults = resultobj.preliminary_results
-				if len(caseresults):
-					result['tests'] = list(map(lambda r: {'id': r.id, 'result': r.result, 'num': r.test_case.num}, caseresults))
-				problem['results'].append(result)
-			self.send_json({
+			get_problem.apply_async(args=({
 				'type': 'problem',
-				'problem': problem
-			})
+				'slug': content['slug'],
+				'user': self.scope['user'].id,
+				'user_group': self.user_group
+			},))
 		elif content['type'] == 'get_test_case' and 'case' in content:
 			result_obj = TestCaseResult.objects.filter(id=content['case'])
 			if len(result_obj) == 0: return
