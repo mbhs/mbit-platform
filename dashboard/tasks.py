@@ -15,7 +15,7 @@ import collections
 
 from mbit.celery import app
 
-from .models import Problem, Submission, TestCaseResult, Division
+from .models import Problem, Submission, TestCaseResult, Division, TestCase
 
 from django.utils import timezone
 from django.db.models import Prefetch, Count
