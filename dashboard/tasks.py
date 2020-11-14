@@ -64,7 +64,8 @@ def get_leaderboard(event):
 	if cache:
 		teams = json.loads(cache)['teams']
 		problems = json.loads(cache)['problems']
-	else:
+	elif not r.get('generating-leaderboard-'+event['division']):
+		r.set('generating-leaderboard-'+event['division'], '1')
 		teams = []
 		problems = []
 		usersubmissions = collections.defaultdict(dict)
@@ -99,6 +100,15 @@ def get_leaderboard(event):
 					team['total'] += score
 			teams.append(team)
 		r.setex('leaderboard-'+event['division'], 10, json.dumps({'teams': teams, 'problems': problems}))
+		r.delete('generating-leaderboard-'+event['division'])
+	else:
+		while True:
+			cache = r.get('leaderboard-'+event['division'])
+			if cache:
+				teams = json.loads(cache)['teams']
+				problems = json.loads(cache)['problems']
+				break
+			time.sleep(0.5)
 	from channels.layers import get_channel_layer
 	channel_layer = get_channel_layer()
 	async_to_sync(channel_layer.send)(event['channel'], {'type': 'leaderboard', 'teams': teams, 'problems': problems})
