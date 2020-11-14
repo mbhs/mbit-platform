@@ -205,7 +205,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 						for submission in problem.submission_set.all():
 							if submission.user == profile.user:
 								preliminary = False #not self.scope['user'].is_staff and round.end >= timezone.now()
-								score = sum(1 for test in submission.testcaseresult_set.all() if test.preliminary == preliminary)
+								score = sum(1 for test in submission.testcaseresult_set.all() if test.test_case.preliminary == preliminary)
 								if score == 40: score += 20
 								team['problems'][problem.name] = score
 								team['total'] += score
