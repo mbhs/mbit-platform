@@ -9,7 +9,7 @@ from django.db import IntegrityError
 from django.db.models import Count, F, Prefetch
 from django.utils import timezone
 from django.contrib.auth import get_user_model
-from .tasks import grade
+from .tasks import grade, get_leaderboard
 
 from datetime import timedelta
 import json
@@ -45,6 +45,13 @@ class DashboardConsumer(JsonWebsocketConsumer):
 			'type': 'fully_graded',
 			'problem': event['problem'],
 			'team': event['team']
+		})
+
+	def leaderboard(self, event):
+		self.send_json({
+			'type': 'leaderboard',
+			'teams': event['teams'],
+			'problems': event['problems']
 		})
 
 	def send_announcements(self, event=None):
@@ -189,30 +196,11 @@ class DashboardConsumer(JsonWebsocketConsumer):
 		elif content['type'] == 'get_announcements':
 			self.send_announcements()
 		elif content['type'] == 'get_leaderboard' and 'division' in content:
-			teams = []
-			problems = []
-			try: division = Division.objects.get(name=content['division'])
-			except ObjectDoesNotExist: return
-			rounds = division.round_set.filter(start__lte=timezone.now()).prefetch_related(Prefetch('problem_set__submission_set', queryset=Submission.objects.order_by('-timestamp')), Prefetch('problem_set__submission_set__testcaseresult_set', queryset=TestCaseResult.objects.filter(result='correct')), 'problem_set__submission_set__testcaseresult_set__test_case')
-			for profile in division.profile_set.all():
-				team = {'total': 0, 'problems': {}}
-				team['name'] = profile.name
-				team['eligible'] = profile.eligible
-				for round in rounds:
-					team['division'] = round.division.name
-					for problem in round.problem_set.all():
-						if problem.name not in problems: problems.append(problem.name)
-						for submission in problem.submission_set.all():
-							if submission.user == profile.user:
-								preliminary = False #not self.scope['user'].is_staff and round.end >= timezone.now()
-								score = sum(1 for test in submission.testcaseresult_set.all() if test.test_case.preliminary == preliminary)
-								if score == 40: score += 20
-								team['problems'][problem.name] = score
-								team['total'] += score
-								break
-						else: team['problems'][problem.name] = 'X'
-				teams.append(team)
-			self.send_json({'type': 'leaderboard', 'teams': teams, 'problems': problems})
+			get_leaderboard.apply_async(args=({
+				'type': 'leaderboard',
+				'division': content['division'],
+				'user_group': self.user_group
+			},))
 		elif self.scope['user'].is_staff:
 			if content['type'] == 'admin_problems':
 				self.send_admin_problems()
