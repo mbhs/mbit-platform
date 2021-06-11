@@ -349,7 +349,7 @@
 								<tbody>
 									<tr v-for="submission in problems[problem].submissions">
 										<td>[[ submission.team ]]</td>
-										<td>[[ submission.filename ]]</td>
+										<td><a target="_blank" :href="'/submission/'+submission.id+'/'+submission.filename">[[ submission.filename ]]</a></td>
 										<td>[[ new Date(submission.time).toLocaleString() ]]</td>
 									</tr>
 								</tbody>

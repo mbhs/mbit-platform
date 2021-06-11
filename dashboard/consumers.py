@@ -93,11 +93,11 @@ class DashboardConsumer(JsonWebsocketConsumer):
 		})
 
 	def send_admin_problems(self, event=None):
-		problems = Problem.objects.all().prefetch_related(Prefetch('submission_set', queryset=Submission.objects.all().only('timestamp', 'filename', 'user__username')), Prefetch('test_case_group__testcase_set', queryset=TestCase.objects.all().only('preliminary', 'num', 'group__name')))
+		problems = Problem.objects.all().prefetch_related(Prefetch('submission_set', queryset=Submission.objects.all().only('id', 'timestamp', 'filename', 'user__username')), Prefetch('test_case_group__testcase_set', queryset=TestCase.objects.all().only('preliminary', 'num', 'group__name')))
 		problem_list = []
 		for problem in problems:
 			temp = model_to_dict(problem, fields=('name', 'slug'))
-			temp['submissions'] = list(map(lambda s: {'team': s['user__username'], 'filename': s['filename'], 'time': int(s['timestamp'].timestamp()*1000)}, problem.submission_set.all().values('timestamp', 'filename', 'user__username')))
+			temp['submissions'] = list(map(lambda s: {'team': s['user__username'], 'filename': s['filename'], 'time': int(s['timestamp'].timestamp()*1000), 'id': s['id']}, problem.submission_set.all().values('id', 'timestamp', 'filename', 'user__username')))
 			temp['test_cases'] = list(map(lambda t: {'preliminary': t['preliminary'], 'num': t['num'], 'group': t['group__name']}, problem.test_case_group.testcase_set.all().values('preliminary', 'num', 'group__name'))) if problem.test_case_group else []
 			problem_list.append(temp)
 		self.send_json({

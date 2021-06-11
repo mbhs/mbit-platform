@@ -6,6 +6,8 @@ from django.contrib.auth import get_user_model, authenticate, login
 from django.db.models import Count
 import json
 
+from .models import Submission
+
 def index(request):
 	if request.user.is_authenticated:
 		return render(request, 'dashboard/index.html')
@@ -13,7 +15,11 @@ def index(request):
 		return redirect('/login')
 
 def submission(request, id, filename):
-	if request.user.is_authenticated:
+	if request.user.is_staff:
+		try: submission_obj = Submission.objects.get(id=id, filename=filename)
+		except ObjectDoesNotExist: raise Http404("Submission does not exist")
+		return HttpResponse(submission_obj.code, content_type="text/plain")
+	elif request.user.is_authenticated:
 		try: submission_obj = request.user.submission_set.get(id=id, filename=filename)
 		except ObjectDoesNotExist: raise Http404("Submission does not exist")
 		return HttpResponse(submission_obj.code, content_type="text/plain")
