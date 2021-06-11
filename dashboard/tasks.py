@@ -3,6 +3,7 @@ from celery import shared_task
 from asgiref.sync import async_to_sync
 import redis
 
+from datetime import timedelta
 from itertools import cycle
 import secrets
 import time
@@ -12,6 +13,7 @@ import socket
 import logging
 import os
 import collections
+import re
 
 from mbit.celery import app
 
@@ -35,7 +37,7 @@ def grade(event):
 			s.sendall(problem_obj.test_case_group.name.encode('utf-8')+b'\n')
 			s.sendall(b'pretests\n' if event['preliminary'] else b'tests\n')
 			s.sendall(submission.language.encode('utf-8')+b'\n')
-			s.sendall(submission.filename.encode('utf-8')+b'\n')
+			s.sendall(re.sub(r'[^A-Za-z0-9_ .]', '', submission.filename).encode('utf-8')+b'\n')
 			s.sendall(str(getattr(submission.problem, submission.language.replace('pypy', 'python').replace('+', 'p')+'_time')).encode('utf-8')+b'\n')
 			s.sendall(submission.code.encode('utf-8') + (b'' if submission.code.endswith('\n') else b'\n'))
 			s.sendall(secret)
@@ -46,8 +48,16 @@ def grade(event):
 	if event['preliminary']:
 		async_to_sync(channel_layer.group_send)(event['user_group'], {
 			'type': 'graded',
-			'problem': event['problem']
+			'problem': event['problem'],
+			'submission': event['submission'],
 		})
+		if all(result['status'] == 'correct' for result in results):
+			grade.apply_async(args=({
+				'type': 'grade',
+				'problem': event['problem'],
+				'submission': event['submission'],
+				'preliminary': False
+			},), queue='systemtests')
 	elif 'channel' in event:
 		async_to_sync(channel_layer.send)(event['channel'], {
 			'type': 'fully_graded',
@@ -59,9 +69,9 @@ def grade(event):
 def get_leaderboard(event):
 	try: division = Division.objects.get(name=event['division'])
 	except ObjectDoesNotExist: return
-	r = redis.Redis(port=1338)
+	r = redis.Redis(port=6379)
 	cache = r.get('leaderboard-'+event['division'])
-	if cache:
+	if cache and not event['staff']:
 		teams = json.loads(cache)['teams']
 		problems = json.loads(cache)['problems']
 	elif not r.get('generating-leaderboard-'+event['division']) or event['staff']:
@@ -74,14 +84,16 @@ def get_leaderboard(event):
 			team['name'] = profile.name
 			team['eligible'] = profile.eligible
 			for round in rounds:
-				preliminary = not event['staff'] and round.end >= timezone.now()
+				preliminary = not event['staff'] and round.end + timedelta(minutes=15) >= timezone.now()
 				team['division'] = round.division.name
 				for problem in round.problem_set.all().order_by('id').only('name'):
-					print(profile.name, problem.name)
 					if problem.name not in problems: problems.append(problem.name)
 					try:
 						submission = problem.submission_set.filter(user=profile.user).latest('timestamp')
 						score = submission.testcaseresult_set.filter(result='correct', test_case__preliminary=preliminary).count()
+						if not preliminary:
+							if submission.testcaseresult_set.filter(result='correct', test_case__preliminary=True).count() != 10:
+								score = 0
 						if score == 40: score += 20
 						team['problems'][problem.name] = score
 						team['total'] += score

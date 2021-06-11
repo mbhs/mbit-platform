@@ -368,12 +368,14 @@ function connect () {
 			navigation.unread = announcementsPanel.announcements.length
 		}
 		else if (data.type === 'problem') {
-			problemPanel.problem.name = data.problem.name
-			problemPanel.results = data.problem.results
-			if (data.problem.results.length >= 0) {
-				problemPanel.result = 0
+			if (navigation.panel === 'problem' && navigation.active === data.problem.slug) {
+				problemPanel.problem.name = data.problem.name
+				problemPanel.results = data.problem.results
+				if (data.problem.results.length >= 0) {
+					problemPanel.result = 0
+				}
+				state.panel = 'problem'
 			}
-			state.panel = 'problem'
 		}
 		else if (data.type === 'submitted') {
 			var result = data.result

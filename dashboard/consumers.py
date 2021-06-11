@@ -148,13 +148,20 @@ class DashboardConsumer(JsonWebsocketConsumer):
 				'slug': content['slug'],
 				'user': self.scope['user'].id,
 				'channel': self.channel_name
-			},))
+			},), queue='get_problem')
 		elif content['type'] == 'get_test_case' and 'case' in content:
-			result_obj = TestCaseResult.objects.filter(id=content['case'])
-			if len(result_obj) == 0: return
+			result_obj = TestCaseResult.objects.filter(id=content['case'], test_case__num__lte=4)
+			values = ('result', 'id', 'runtime')
+			kw_values = {'num': F('test_case__num')}
+			if len(result_obj) == 0:
+				result_obj = TestCaseResult.objects.filter(id=content['case'])
+				if len(result_obj) == 0: return
+			else:
+				values += 'stdout', 'stderr'
+				kw_values['stdin'] = F('test_case__stdin')
 			self.send_json({
 				'type': 'case_result',
-				'case': list(result_obj.values('result', 'id', 'stdout', 'stderr', 'runtime', num=F('test_case__num'), stdin=F('test_case__stdin')))[0]
+				'case': list(result_obj.values(*values, **kw_values))[0]
 			})
 		elif content['type'] == 'submit' and 'problem' in content and 'submission' in content and content['submission'].get('filename') and content['submission'].get('language') in ('python', 'java', 'c++', 'pypy') and content['submission'].get('content'):
 			if len(content['submission']['content']) >  1000000:
@@ -185,12 +192,6 @@ class DashboardConsumer(JsonWebsocketConsumer):
 				'user_group': self.user_group,
 				'preliminary': True
 			},), queue='pretests')
-			grade.apply_async(args=({
-				'type': 'grade',
-				'problem': content['problem'],
-				'submission': submission.id,
-				'preliminary': False
-			},), queue='systemtests')
 		elif content['type'] == 'get_announcements':
 			self.send_announcements()
 		elif content['type'] == 'get_leaderboard' and 'division' in content:
@@ -199,7 +200,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 				'division': content['division'],
 				'channel': self.channel_name,
 				'staff': self.scope['user'].is_staff
-			},))
+			},), queue='leaderboard')
 		elif self.scope['user'].is_staff:
 			if content['type'] == 'admin_problems':
 				self.send_admin_problems()
