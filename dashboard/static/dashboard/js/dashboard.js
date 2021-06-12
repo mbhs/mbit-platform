@@ -354,6 +354,7 @@ function connect () {
 			profilePanel.division = data.divisions[0].id
 		}
 		else if (data.type === 'leaderboard') {
+			if (!navigation.admin) data.teams = data.teams.filter(t => t.name !== 'admin')
 			data.teams.sort((a, b) => (b.total === a.total && a.latest && b.latest) ? a.latest - b.latest : b.total - a.total)
 			leaderboardPanel.teams = data.teams
 			leaderboardPanel.problems = data.problems
