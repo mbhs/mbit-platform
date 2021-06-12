@@ -71,6 +71,7 @@ def get_leaderboard(event):
 	except ObjectDoesNotExist: return
 	r = redis.Redis(port=6379)
 	cache = r.get('leaderboard-'+event['division'])
+	is_preliminary = False
 	if cache and not event['staff']:
 		teams = json.loads(cache)['teams']
 		problems = json.loads(cache)['problems']
@@ -85,6 +86,7 @@ def get_leaderboard(event):
 			team['eligible'] = profile.eligible
 			for round in rounds:
 				preliminary = not event['staff'] and round.end + timedelta(minutes=15) >= timezone.now()
+				if preliminary: is_preliminary = True
 				team['division'] = round.division.name
 				for problem in round.problem_set.all().order_by('id').only('name'):
 					if problem.name not in problems: problems.append(problem.name)
@@ -112,7 +114,7 @@ def get_leaderboard(event):
 			time.sleep(0.5)
 	from channels.layers import get_channel_layer
 	channel_layer = get_channel_layer()
-	async_to_sync(channel_layer.send)(event['channel'], {'type': 'leaderboard', 'teams': teams, 'problems': problems})
+	async_to_sync(channel_layer.send)(event['channel'], {'type': 'leaderboard', 'teams': teams, 'problems': problems, 'preliminary': is_preliminary})
 
 @shared_task
 def get_problem(event):

@@ -51,7 +51,8 @@ class DashboardConsumer(JsonWebsocketConsumer):
 		self.send_json({
 			'type': 'leaderboard',
 			'teams': event['teams'],
-			'problems': event['problems']
+			'problems': event['problems'],
+			'preliminary': event['preliminary']
 		})
 
 	def problem(self, event):

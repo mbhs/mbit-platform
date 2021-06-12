@@ -88,7 +88,8 @@ var leaderboardPanel = new Vue({
 		divisions: [],
 		division: null,
 		teams: [],
-		problems: []
+		problems: [],
+		preliminary: false
 	},
 	watch: {
 		division: function () {
@@ -356,6 +357,7 @@ function connect () {
 			data.teams.sort((a, b) => (b.total === a.total && a.latest && b.latest) ? a.latest - b.latest : b.total - a.total)
 			leaderboardPanel.teams = data.teams
 			leaderboardPanel.problems = data.problems
+			leaderboardPanel.preliminary = data.preliminary
 		}
 		else if (data.type === 'admin') {
 			navigation.admin = true
