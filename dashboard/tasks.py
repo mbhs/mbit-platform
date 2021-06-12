@@ -20,7 +20,7 @@ from mbit.celery import app
 from .models import Problem, Submission, TestCaseResult, Division, TestCase
 
 from django.utils import timezone
-from django.db.models import Prefetch, Count
+from django.db.models import Prefetch, Count, F
 from django.core.exceptions import ObjectDoesNotExist
 from django.forms.models import model_to_dict
 
@@ -118,14 +118,14 @@ def get_leaderboard(event):
 def get_problem(event):
 	problem_obj = Problem.objects.get(slug=event['slug'])
 	problem = model_to_dict(problem_obj, fields=['name', 'slug'])
-	testcasecount = problem_obj.test_case_group.testcase_set.filter(preliminary=True).aggregate(tests=Count("id"))["tests"] if problem_obj.test_case_group else 0
-	results = problem_obj.submission_set.filter(user__id=event['user']).order_by('-timestamp').prefetch_related(Prefetch('testcaseresult_set', to_attr='preliminary_results', queryset=TestCaseResult.objects.filter(test_case__preliminary=True).order_by('test_case__num').only('id', 'result', 'test_case__num')))
+	testcasecount = problem_obj.test_case_group.testcase_set.only('preliminary', 'id').filter(preliminary=True).aggregate(tests=Count("id"))["tests"] if problem_obj.test_case_group else 0
+	results = problem_obj.submission_set.filter(user__id=event['user']).order_by('-timestamp').prefetch_related(Prefetch('testcaseresult_set', to_attr='preliminary_results', queryset=TestCaseResult.objects.filter(test_case__preliminary=True).order_by('test_case__num').only('id', 'result').annotate(num=F('test_case__num')))).all().only('id', 'filename', 'timestamp', 'language')
 	problem['results'] = []
 	for resultobj in results:
 		result = {'id': resultobj.id, 'filename': resultobj.filename, 'tests': testcasecount, 'time': int(resultobj.timestamp.timestamp()*1000), 'url': '/submission/'+str(resultobj.id)+'/'+resultobj.filename, 'timelimit': getattr(problem_obj, resultobj.language.replace('pypy', 'python').replace('+', 'p')+'_time')}
 		caseresults = resultobj.preliminary_results
 		if len(caseresults):
-			result['tests'] = list(map(lambda r: {'id': r.id, 'result': r.result, 'num': r.test_case.num}, caseresults))
+			result['tests'] = list(map(lambda r: {'id': r.id, 'result': r.result, 'num': r.num}, caseresults))
 		problem['results'].append(result)
 	from channels.layers import get_channel_layer
 	channel_layer = get_channel_layer()
