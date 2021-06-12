@@ -91,12 +91,13 @@ def get_leaderboard(event):
 					try:
 						submission = problem.submission_set.filter(user=profile.user).latest('timestamp')
 						score = submission.testcaseresult_set.filter(result='correct', test_case__preliminary=preliminary).count()
-						if not preliminary:
-							if submission.testcaseresult_set.filter(result='correct', test_case__preliminary=True).count() != 10:
-								score = 0
+						if submission.testcaseresult_set.filter(result='correct', test_case__preliminary=True).count() == 10:
+							if 'latest' in team: team['latest'] = max(team['latest'], submission.timestamp.timestamp())
+							else: team['latest'] = submission.timestamp.timestamp()
+						elif not preliminary: score = 0
 						if score == 40: score += 20
 						team['problems'][problem.name] = score
-						team['total'] += score
+						team['total'] += int(score == 10) if preliminary else score
 					except ObjectDoesNotExist: team['problems'][problem.name] = 'X'
 			teams.append(team)
 		if not event['staff']: r.setex('leaderboard-'+event['division'], 10, json.dumps({'teams': teams, 'problems': problems}))
