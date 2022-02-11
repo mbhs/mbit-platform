@@ -20,7 +20,7 @@ httptools = "*"
 websockets = "*"
 psycopg2 = "*"
 flower = {file = "https://github.com/mher/flower/zipball/master"}
-twisted = "==20.3.0"
+twisted = "==22.1.0"
 
 [requires]
 python_version = "3.9"
