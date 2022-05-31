@@ -28,7 +28,8 @@ if os.environ.get('DEBUG'):
     DEBUG = True
 else:
     DEBUG = False
-    ALLOWED_HOSTS = ['mbit.live']
+    ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "mbit-live.mbhs.edu").split(",")
+    CSRF_TRUSTED_ORIGINS = [f"https://{host}" for host in ALLOWED_HOSTS]
 
 
 # Application definition
@@ -81,7 +82,7 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("localhost", 6379)],
+            "hosts": [(os.environ.get('REDIS_HOST', "localhost"), 6379)],
         },
     },
 }
@@ -92,10 +93,10 @@ CHANNEL_LAYERS = {
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'dbmbit',
-        'USER': 'mbit',
+        'NAME': os.environ.get("DBNAME", 'dbmbit'),
+        'USER': os.environ.get("DBUSER", 'mbit'),
         'PASSWORD': os.environ.get('DBPASS'),
-        'HOST': 'ls-b817cbea7757796b81e256978493d866dbeb6e78.cdkw74gyioah.us-east-1.rds.amazonaws.com',
+        'HOST': os.environ.get("DBHOST", 'db.actf.co'),
     }
 }
 
@@ -135,5 +136,5 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
-STATIC_URL = '/static/'
+STATIC_URL = 'https://mbit-static.mbhs.edu/'
 STATIC_ROOT = os.path.join(BASE_DIR, "static")

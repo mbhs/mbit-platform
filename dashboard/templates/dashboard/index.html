@@ -178,16 +178,16 @@
 				</div>
 				<div class="select program-language">
 				  <select v-model="submission.language">
-					<option value="python">Python 3.9</option>
-					<option value="java">Java 11</option>
-					<option value="c++">C++17</option>
-					<option value="pypy">PyPy 3.7</option>
+					<option value="py">PyPy 3.7 (Python)</option>
+					<option value="java">Java 17</option>
+					<option value="cpp">C++17</option>
 				  </select>
 				</div>
 				<button @click="submit" class="button is-primary">Submit</button><br><br>
 				<div class="results">
 					<h3 class="is-4 subtitle">Results</h3><span class="file-download" v-if="result !== null &amp;&amp; results.length > result"><a target="_blank" :href="results[result].url"><i class="fas fa-file-download"></i> [[ results[result].filename ]]</a><span v-if="result"> (old)</span></span>
-					<p>The results on this page are not indicative of the test cases used for rankings. They may assist in the development of your solution, but they do not guarantee correctness for all possible inputs. <strong>Only your most recent submission will be used for grading.</strong></p>
+					<p>The results on this page are not 100% indicative of the system test cases used for rankings. Your <strong>most recent solution</strong> will be run on system tests if and only if it passes all pretests below.
+					</p>
 					<p v-if="results.length === 0"><em>No submissions yet.</em></p>
 					<div class="select" v-if="results.length > 0">
 						<select v-model="result">
@@ -207,7 +207,7 @@
 					<div class="code-description notification" v-if="testInfo !== null &amp;&amp; results[result].tests[testInfo].result in descriptions">
 						<button class="delete" @click="testInfo = null"></button>
 						<strong>[[ descriptions[results[result].tests[testInfo].result].name ]].</strong> [[ descriptions[results[result].tests[testInfo].result].body ]]<br>
-						Runtime: [[ results[result].tests[testInfo].runtime ? Math.round(results[result].tests[testInfo].runtime*1000)/1000 : 0.000 ]] seconds ([[ results[result].timelimit ]] second limit)
+						Runtime: [[ results[result].tests[testInfo].runtime ? Math.round(results[result].tests[testInfo].runtime*1000)/1000 : 0.000 ]] milliseconds ([[ results[result].timelimit ]] second limit)
 						<p v-show="results[result].tests[testInfo].stdin">Input<a v-show="inputDownload" class="input-download" :href="inputDownload" style="float: right" :download="problem.slug+'_'+results[result].tests[testInfo].num+'.txt'"><i class="fas fa-file-download"></i> Download</a></p>
 						<pre v-if="results[result].tests[testInfo].stdin">[[ results[result].tests[testInfo].stdin.length > 10000 ? results[result].tests[testInfo].stdin.slice(0, 10000)+'\n[truncated]' : results[result].tests[testInfo].stdin ]]</pre>
 						<p v-show="results[result].tests[testInfo].stdout">Your program's output</p>

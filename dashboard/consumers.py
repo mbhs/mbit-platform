@@ -125,7 +125,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 					profile = Profile(division=Division.objects.get(id=content['division']), user=self.scope['user'], name=content['name'], members=json.dumps(cleaned), eligible=eligible)
 					profile.save()
 				else:
-					self.scope['user'].profile.division = Division.objects.get(id=content['division'])
+					# self.scope['user'].profile.division = Division.objects.get(id=content['division'])
 					self.scope['user'].profile.name = content['name']
 					self.scope['user'].profile.members = json.dumps(cleaned)
 					self.scope['user'].profile.eligible = eligible
@@ -137,21 +137,24 @@ class DashboardConsumer(JsonWebsocketConsumer):
 			self.problems = Problem.objects.filter(rounds__division=self.division, rounds__start__lte=timezone.now(), rounds__end__gte=timezone.now())
 			self.send_profile()
 		elif content['type'] == 'get_problems':
+			ordering = ("index", "name") if self.division and self.division.name != "Advanced" else ("name",)
 			self.send_json({
 				'type': 'problems',
-				'problems': list(self.problems.order_by('id').values('name', 'slug'))
+				'problems': list(self.problems.order_by(*ordering).values('name', 'slug'))
 			})
 		elif content['type'] == 'get_problem' and 'slug' in content:
-			try: problem_obj = self.problems.get(slug=content['slug'])
-			except ObjectDoesNotExist: return
-			get_problem.apply_async(args=({
+			try: 
+				problem_obj = self.problems.get(slug=content['slug'])
+			except ObjectDoesNotExist: 
+				return
+			get_problem.apply_async(({
 				'type': 'problem',
 				'slug': content['slug'],
 				'user': self.scope['user'].id,
 				'channel': self.channel_name
-			},), queue='get_problem')
+			},), queue="get_problem")
 		elif content['type'] == 'get_test_case' and 'case' in content:
-			result_obj = TestCaseResult.objects.filter(id=content['case'], test_case__num__lte=4)
+			result_obj = TestCaseResult.objects.filter(id=content['case'], test_case__num__lte=1)
 			values = ('result', 'id', 'runtime')
 			kw_values = {'num': F('test_case__num')}
 			if len(result_obj) == 0:
@@ -164,7 +167,7 @@ class DashboardConsumer(JsonWebsocketConsumer):
 				'type': 'case_result',
 				'case': list(result_obj.values(*values, **kw_values))[0]
 			})
-		elif content['type'] == 'submit' and 'problem' in content and 'submission' in content and content['submission'].get('filename') and content['submission'].get('language') in ('python', 'java', 'c++', 'pypy') and content['submission'].get('content'):
+		elif content['type'] == 'submit' and 'problem' in content and 'submission' in content and content['submission'].get('filename') and content['submission'].get('language') in ('py', 'java', 'cpp') and content['submission'].get('content'):
 			if len(content['submission']['content']) >  1000000:
 				self.send_json({'type': 'error', 'message': 'Submission too large.'})
 				return
@@ -186,22 +189,23 @@ class DashboardConsumer(JsonWebsocketConsumer):
 					'time': int(submission.timestamp.timestamp()*1000)
 				}
 			})
-			grade.apply_async(args=({
+			grade.apply_async(({
 				'type': 'grade',
 				'problem': content['problem'],
 				'submission': submission.id,
 				'user_group': self.user_group,
 				'preliminary': True
-			},), queue='pretests')
+			},), queue="grade")
 		elif content['type'] == 'get_announcements':
 			self.send_announcements()
 		elif content['type'] == 'get_leaderboard' and 'division' in content:
-			get_leaderboard.apply_async(args=({
+			print("queued for celery")
+			get_leaderboard.apply_async(({
 				'type': 'leaderboard',
 				'division': content['division'],
 				'channel': self.channel_name,
 				'staff': self.scope['user'].is_staff
-			},), queue='leaderboard')
+			},), queue="get_leaderboard")
 		elif self.scope['user'].is_staff:
 			if content['type'] == 'admin_problems':
 				self.send_admin_problems()
@@ -245,10 +249,10 @@ class DashboardConsumer(JsonWebsocketConsumer):
 				team = get_user_model().objects.get(username=content['team'])
 				problem = Problem.objects.get(slug=content['problem'])
 				submission = team.submission_set.filter(problem=problem).order_by('-timestamp').first()
-				grade.apply_async(args=({
+				grade.apply_async(({
 					'type': 'grade',
 					'problem': content['problem'],
 					'submission': submission.id,
 					'channel': self.channel_name,
 					'preliminary': False
-				},), queue='systemtests')
+				},), queue="grade")

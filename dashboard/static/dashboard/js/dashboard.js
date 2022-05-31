@@ -12,12 +12,20 @@ var descriptions = {
 		body: 'Your program exhausted the available memory (256 MB).'
 	},
 	'error': {
-		name: 'Error',
-		body: 'You may have a compile-time error or a run-time error. See below for more details.'
+		name: 'Runtime Error',
+		body: 'You have a run-time error. You can click the first pretest to view program output.'
 	},
 	'correct': {
 		name: 'Correct',
 		body: 'Nice job! Your program produced the correct output.'
+	},
+	'ctimeout': {
+		name: 'Compile Timeout',
+		body: 'Your program took too long to compile. If you\'re using C++, consider lowering header sizes.'
+	},
+	'cerror': {
+		name: 'Compilation Error',
+		body: 'Your program could not be compiled. You can click the first pretest to view compiler output.'
 	}
 }
 
@@ -25,7 +33,9 @@ var codes = {
 	timeout: 'TLE',
 	incorrect: 'WA',
 	error: 'ERR',
-	memoryout: 'OOM'
+	memoryout: 'OOM',
+	ctimeout: 'CT',
+	cerror: 'CE'
 }
 
 var state = {
@@ -174,7 +184,7 @@ var problemPanel = new Vue({
 		},
 		submission: {
 			filename: '',
-			language: 'python',
+			language: 'py',
 			content: ''
 		},
 		submissionEditor: false,
@@ -196,7 +206,7 @@ var problemPanel = new Vue({
 		setFile: function (file) {
 			var language
 			this.submission.filename = file.name || ''
-			if (language = {"py": "python", "cpp": "c++", "java": "java"}[file.name.split('.').slice(-1)[0]]) {
+			if (language = {"py": "py", "cpp": "cpp", "java": "java"}[file.name.split('.').slice(-1)[0]]) {
 				this.submission.language = language
 			}
 			this.submissionEditor = false
@@ -207,7 +217,10 @@ var problemPanel = new Vue({
 			reader.readAsText(file)
 		},
 		submit () {
-			if (this.submission.content && !this.submission.filename) this.submission.filename = 'submission.'+{"python": "py", "pypy": "py", "c++": "cpp", "java": "java"}[this.submission.language]
+			if (!["py", "cpp", "java"].includes(this.submission.language)) {
+				return;
+			}
+			if (this.submission.content && !this.submission.filename) this.submission.filename = 'submission.'+{"py": "py", "cpp": "cpp", "java": "java"}[this.submission.language]
 			ws.send(JSON.stringify({'type': 'submit', 'submission': this.submission, 'problem': this.problem.slug}))
 			this.$refs.fileInput.value = null
 			this.submission.filename = ''
@@ -447,7 +460,7 @@ function connect () {
 	ws.addEventListener('close', function (event) {
 		openModal('disconnectedMessage')
 		announcementsPanel.first = true
-		if (connectTimeout === -1) connectTimeout = setTimeout(connect, 5000)
+		if (connectTimeout === -1) connectTimeout = setTimeout(connect, 3000)
 	})
 
 }

@@ -34,9 +34,9 @@ class Command(BaseCommand):
 				problem = submission.problem
 				team = get_user_model().objects.get(username=submission.user.username)
 				submission = team.submission_set.filter(problem=problem).order_by('-timestamp').first()
-				grade.apply_async(args=({
+				grade.apply_async(({
 					'type': 'grade',
 					'problem': problem.slug,
 					'submission': submission.id,
 					'preliminary': False
-				},), queue='systemtests')
+				},), queue="grade")
